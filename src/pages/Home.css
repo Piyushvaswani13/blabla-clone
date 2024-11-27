@@ -1,0 +1,15 @@
+/* src/pages/Home.css */
+.home-container {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    align-items: center;
+    padding: 20px;
+  }
+  
+  .home-link {
+    text-decoration: none;
+    color: blue;
+    font-size: 18px;
+  }
+  

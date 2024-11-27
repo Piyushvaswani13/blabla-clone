@@ -1,0 +1,232 @@
+// Import the functions you need from the SDKs you need
+import { initializeApp } from "firebase/app";
+import { getAnalytics } from "firebase/analytics";
+// TODO: Add SDKs for Firebase products that you want to use
+// https://firebase.google.com/docs/web/setup#available-libraries
+
+// Your web app's Firebase configuration
+// For Firebase JS SDK v7.20.0 and later, measurementId is optional
+const firebaseConfig = {
+  apiKey: "AIzaSyASCnXS0GK9Fd2diDiMsVpLI30bMZtFk6c",
+  authDomain: "blabla-4493a.firebaseapp.com",
+  projectId: "blabla-4493a",
+  storageBucket: "blabla-4493a.appspot.com",
+  messagingSenderId: "963094400663",
+  appId: "1:963094400663:web:dfae5db63a5b68a6f623d2",
+  measurementId: "G-YZ37JNB5RM"
+};
+
+// Initialize Firebase
+const app = initializeApp(firebaseConfig);
+const analytics = getAnalytics(app);
+
+
+
+// give me all updated pages code and css, the workflow should be like signup > login > home(suppose driver have to first  publish ride, also there should be a dropdown in which driver can select his car model) > publishride > searchride (customer will search for ride) > Ridecard(when click on request to book driver should get notification in realtime to accept or reject ) >  RideBooking > payment > YourRides (in this page we should also get mapview of our current ride from Source to destination with other deatils)
+
+
+import React, { useEffect, useState } from "react";
+import { db } from "../services/firebase";
+import { collection, getDocs, query, where, updateDoc, doc, getDoc } from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+
+function YourRides() {
+  const { currentUser } = useAuth();
+  const [bookingRequests, setBookingRequests] = useState([]);
+  const [selectedProfile, setSelectedProfile] = useState(null);
+  const [isTripAccepted, setIsTripAccepted] = useState(false);  // Track if trip is accepted by the driver
+  useEffect(() => {
+    console.log("Current User:", currentUser);
+  }, [currentUser]);
+
+  const fetchBookingRequests = async () => {
+    if (!currentUser?.uid) return;
+
+    const userRole = currentUser?.role;
+    console.log(userRole)
+   
+
+    if (userRole === "driver") {
+      const q = query(collection(db, "rides"), where("driverId", "==", currentUser.uid));
+      const querySnapshot = await getDocs(q);
+
+      if (querySnapshot.empty) {
+        console.log("No rides found for this driver.");
+        return;
+      }
+
+      const reqs = []; // Create a new array to hold all the requests
+
+      for (const item of querySnapshot.docs) {
+        const qq = query(
+          collection(db, "userRide"),
+          where("tripId", "==", item.id),
+          where("status", "==", "pending")
+        );
+        const qs = await getDocs(qq);
+
+        for (const userRideItem of qs.docs) {
+          const docRef = doc(db, "users", userRideItem.data().userId);
+          const docSnap = await getDoc(docRef);
+          if (docSnap.exists()) {
+            const newObj = {
+              ...userRideItem.data(),
+              driverName: rideData.driverName,
+              email: docSnap.data().email,
+              name: docSnap.data().name,
+              contact: docSnap.data().contact,
+              prefrences: docSnap.data().prefrences,
+              id: userRideItem.id,
+            };
+            reqs.push(newObj); // Add the request to the array
+          }
+        }
+      }
+
+      // Now update the state after all requests are fetched
+      setBookingRequests((prevRequests) => [...prevRequests, ...reqs]);
+    }
+
+    if (userRole === "passenger") {
+      const qqq = query(
+        collection(db, "userRide"),
+        where("userId", "==", currentUser.uid),
+        where("status", "==", "accepted")
+      );
+      const qss = await getDocs(qqq);
+
+      
+
+      if (!qss.empty) {
+        qss.forEach(async (rideRequest) => {
+          const tripDocRef = doc(db, "rides", rideRequest.data().tripId);
+          const tripSnapshot = await getDoc(tripDocRef);
+          if (tripSnapshot.exists()) {
+            setSelectedProfile({
+              ...rideRequest.data(),
+              tripDetails: tripSnapshot.data(),
+            });
+            setIsTripAccepted(true);
+          }
+        });
+      }
+    }
+  };
+
+  useEffect(() => {
+    fetchBookingRequests();
+  }, [currentUser]);
+
+  // Handle accept request (for the driver)
+  const handleAccept = async (requestId) => {
+    try {
+      const requestRef = doc(db, "userRide", requestId);
+      await updateDoc(requestRef, { status: "accepted" });
+
+      const acceptedRequest = bookingRequests.find((request) => request.id === requestId);
+      if (acceptedRequest) {
+        setSelectedProfile(acceptedRequest);
+        setIsTripAccepted(true);
+      }
+
+      setBookingRequests((prevRequests) => prevRequests.filter((request) => request.id !== requestId));
+      alert("Ride request accepted!");
+    } catch (error) {
+      console.error("Error updating ride request:", error);
+    }
+  };
+
+  // Handle cancel trip (for the passenger)
+  const handleCancelTrip = async () => {
+    try {
+      const requestRef = doc(db, "userRide", selectedProfile.id);
+      await updateDoc(requestRef, { status: "cancelled" });
+
+      // Reset the selected trip state
+      setSelectedProfile(null);
+      setIsTripAccepted(false);
+      alert("Trip cancelled successfully!");
+    } catch (error) {
+      console.error("Error cancelling trip:", error);
+    }
+  };
+
+  // Handle reject request (for the driver)
+  const handleReject = async (requestId) => {
+    try {
+      const requestRef = doc(db, "userRide", requestId);
+      await updateDoc(requestRef, { status: "rejected" });
+      setBookingRequests((prevRequests) => prevRequests.filter((request) => request.id !== requestId));
+      alert("Ride request rejected!");
+    } catch (error) {
+      console.error("Error rejecting ride request:", error);
+    }
+  };
+
+  if (!currentUser?.uid) return <p>Please log in to view ride requests.</p>;
+console.log(bookingRequests.length);
+  return (
+    <div>
+      <h2>Your Rides</h2>
+
+      
+      {isTripAccepted && selectedProfile && (
+        <div style={{ marginTop: "20px", padding: "10px", border: "1px solid #ddd" }}>
+          <h3>Trip Accepted</h3>
+          <p><strong>Passenger Name:</strong> {selectedProfile.name}</p>
+          <p><strong>Contact:</strong> {selectedProfile.contact}</p>
+          <p><strong>Preferences:</strong> {selectedProfile.prefrences ? selectedProfile.prefrences.join(", ") : "No preferences set"}</p>
+
+          <button onClick={handleCancelTrip} style={{ color: "white", backgroundColor: "red" }}>
+            Cancel Trip
+          </button>
+        </div>
+      )}
+
+       {/* If passenger has accepted trip, show trip details */}
+       {isTripAccepted && selectedProfile && currentUser?.role === "passenger" (
+        <div style={{ marginTop: "20px", padding: "10px", border: "1px solid #ddd" }}>
+          <h3>Trip Accepted</h3>
+          <p><strong>Driver Name:</strong> {selectedProfile.driverName}</p>
+          <p><strong>Contact:</strong> {selectedProfile.contact}</p>
+          <p><strong>Preferences:</strong> {selectedProfile.prefrences ? selectedProfile.prefrences.join(", ") : "No preferences set"}</p>
+
+          <button onClick={handleCancelTrip} style={{ color: "white", backgroundColor: "red" }}>
+            Cancel Trip
+          </button>
+        </div>
+      )}
+
+      {/* Driver-specific logic to accept/reject requests */}
+      {!isTripAccepted && currentUser?.role === "driver" && bookingRequests.length > 0 &&
+        bookingRequests.map((request) => (
+          <div key={request.id} style={{ marginBottom: "20px", padding: "10px", border: "1px solid #ddd" }}>
+            <p>Requester: {request.email}</p>
+            <p>{request.name}</p>
+            <button
+              onClick={() => handleAccept(request.id)}
+              style={{ marginRight: "10px", color: "white", backgroundColor: "green" }}
+            >
+              Accept
+            </button>
+            <button
+              onClick={() => handleReject(request.id)}
+              style={{ color: "white", backgroundColor: "red" }}
+            >
+              Reject
+            </button>
+          </div>
+        ))}
+
+      {/* Passenger-specific view */}
+      {currentUser?.role === "passenger" && !isTripAccepted && <p>No accepted trips found.</p>}
+
+      {/* No pending requests message for drivers */}
+      {currentUser?.role === "driver" && bookingRequests.length === 0 && (
+        <p>No pending requests for you.</p>
+      )}
+    </div>
+  );
+}
+
+export default YourRides;

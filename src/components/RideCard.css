@@ -1,0 +1,30 @@
+.ride-card {
+  background-color: #f9f9f9;
+  border: 1px solid #ddd;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 8px;
+  cursor: pointer;
+}
+.ride-card h3 {
+  font-size: 1.2rem;
+  margin: 0;
+  color: #333;
+}
+.ride-card p {
+  font-size: 1rem;
+  margin: 5px 0;
+  color: #555;
+}
+.ride-card button {
+  background-color: #007bff;
+  color: #fff;
+  border: none;
+  padding: 10px 15px;
+  margin-top: 10px;
+  cursor: pointer;
+  border-radius: 5px;
+}
+.ride-card button:hover {
+  background-color: #0056b3;
+}
