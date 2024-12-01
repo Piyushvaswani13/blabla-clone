@@ -1,35 +1,57 @@
 import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRides } from "../context/RideContext";
+import { auth, db } from '../services/firebase';
+import { doc, getDoc } from "firebase/firestore";
 import "./PublishRide.css";
 
 function PublishRide({ googleMapsApiKey }) {
-  const [source, setSource] = useState('kichha, uttarakhand, india');
-  const [destination, setDestination] = useState('delhi, india');
+  const [source, setSource] = useState('');
+  const [destination, setDestination] = useState('');
+  const [sourceLat, setSourceLat] = useState(null);
+  const [sourceLng, setSourceLng] = useState(null);
+  const [destinationLat, setDestinationLat] = useState(null);
+  const [destinationLng, setDestinationLng] = useState(null);
   const [carModel, setCarModel] = useState("");
   const [date, setDate] = useState("");
   const [seats, setSeats] = useState("");
   const [price, setPrice] = useState("");
   const [driverName, setDriverName] = useState("");
   const [driverContact, setDriverContact] = useState("");
-  const [approvalType, setApprovalType] = useState("instant"); // New state for approval type
+  const [approvalType, setApprovalType] = useState("instant");
   const { publishRide } = useRides();
   const navigate = useNavigate();
 
   useEffect(() => {
-    const loadScript = (src) => {
-      return new Promise((resolve) => {
-        const script = document.createElement("script");
-        script.src = src;
-        script.async = true;
-        script.onload = () => resolve();
-        document.body.appendChild(script);
-      });
+    const loadUserDetails = async () => {
+      const user = auth.currentUser;
+      if (user) {
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setDriverName(userData.name);
+          setDriverContact(userData.contact);
+        }
+      }
     };
 
-    loadScript(
-      `https://maps.gomaps.pro/maps/api/js?key=${googleMapsApiKey}&libraries=places`
-    ).then(() => {
+    loadUserDetails();
+  }, []);
+
+  useEffect(() => {
+    const loadScript = async (src) => {
+      const script = document.createElement("script");
+      script.src = src;
+      script.async = true;
+      document.body.appendChild(script);
+      await new Promise((resolve) => (script.onload = resolve));
+    };
+
+    const initializeAutocomplete = async () => {
+      await loadScript(
+        `https://maps.gomaps.pro/maps/api/js?key=${googleMapsApiKey}&libraries=places`
+      );
+
       const autocompleteSource = new window.google.maps.places.Autocomplete(
         document.getElementById("autocomplete-source"),
         { types: ["(cities)"], componentRestrictions: { country: "IN" } }
@@ -43,31 +65,32 @@ function PublishRide({ googleMapsApiKey }) {
       autocompleteSource.addListener("place_changed", () => {
         const place = autocompleteSource.getPlace();
         setSource(place.formatted_address);
+        setSourceLat(place.geometry.location.lat());
+        setSourceLng(place.geometry.location.lng());
       });
 
       autocompleteDestination.addListener("place_changed", () => {
         const place = autocompleteDestination.getPlace();
         setDestination(place.formatted_address);
+        setDestinationLat(place.geometry.location.lat());
+        setDestinationLng(place.geometry.location.lng());
       });
-    });
+    };
+
+    initializeAutocomplete();
   }, [googleMapsApiKey]);
 
   const handlePublish = async () => {
-    if (
-      !source ||
-      !destination ||
-      !carModel ||
-      !date ||
-      !seats ||
-      !price ||
-      !driverName ||
-      !driverContact
-    ) {
+    if (!source || !destination || !carModel || !date || !seats || !price) {
       alert("Please fill in all fields!");
       return;
     }
 
     const rideDetails = {
+      sourceLat,
+      sourceLng,
+      destinationLat,
+      destinationLng,
       source,
       destination,
       carModel,
@@ -76,7 +99,7 @@ function PublishRide({ googleMapsApiKey }) {
       price,
       driverName,
       driverContact,
-      approvaltype: approvalType, // Include approval type
+      approvaltype: approvalType,
       status: "available",
     };
 
@@ -119,21 +142,9 @@ function PublishRide({ googleMapsApiKey }) {
         value={price}
         onChange={(e) => setPrice(e.target.value)}
       />
-      <input
-        type="text"
-        placeholder="Driver's Name"
-        value={driverName}
-        onChange={(e) => setDriverName(e.target.value)}
-      />
-      <input
-        type="text"
-        placeholder="Driver's Contact"
-        value={driverContact}
-        onChange={(e) => setDriverContact(e.target.value)}
-      />
       <select
         value={approvalType}
-        onChange={(e) => setApprovalType(e.target.value)} // Handle approval type selection
+        onChange={(e) => setApprovalType(e.target.value)}
       >
         <option value="instant">Instant Approval</option>
         <option value="requestcycle">Request Cycle</option>

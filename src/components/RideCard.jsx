@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRides } from "../context/RideContext";
 import "./RideCard.css";
+import Map from "../pages/Map";
 
 // Helper function to get a cookie value
 const getCookie = (name) => {
@@ -15,11 +16,13 @@ const getCookie = (name) => {
   return null;
 };
 
-function RideCard({ ride }) {
+function RideCard({ ride, googleMapsApiKey }) {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const { sendNotification, addRideRequest } = useRides();
   const uid = getCookie("uid"); // Get UID from cookies
+
+
 
   const handleRequestBooking = async () => {
     if (!uid) {
@@ -49,6 +52,10 @@ function RideCard({ ride }) {
     }
   };
 
+  // const handleMapView = () => {
+  //   navigate(`/map-view/${ride.sourceLat}/${ride.sourceLng}/${ride.destinationLat}/${ride.destinationLng}`);
+  // };
+
   return (
     <div className="ride-card">
       {showDetails ? (
@@ -63,6 +70,14 @@ function RideCard({ ride }) {
           <p>Price: {ride.price}</p>
           <p>Approval Type: {ride.approvaltype}</p>
           <button onClick={handleRequestBooking}>Request to Book</button>
+          {/* <button onClick={handleMapView}>Map View</button> */}
+          <Map
+            googleMapsApiKey={googleMapsApiKey}
+            sourceLat={ride.sourceLat}
+            sourceLng={ride.sourceLng}
+            destinationLat={ride.destinationLat}
+            destinationLng={ride.destinationLng}
+          />
           <button onClick={() => setShowDetails(false)}>Hide Details</button>
         </>
       ) : (

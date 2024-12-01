@@ -1,7 +1,7 @@
-// src/App.jsx
 import React, { useState } from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
-import MapComponent from './components/MapComponent'; 
+import Map from './pages/Map';
+import MapComponent from './components/MapComponent'; // MapComponent for handling maps and directions
 import Home from './pages/Home';
 import Login from './pages/Login';
 import Signup from './pages/Signup';
@@ -14,40 +14,76 @@ import Payment from './pages/Payment';
 import YourRides from './pages/YourRides';
 import AvailableRidesPage from './pages/AvailableRidesPage';
 import Dashboard from './pages/Dashboard';
-import { RideProvider } from './context/RideContext'; 
+import { RideProvider } from './context/RideContext';
+import { LoadScript } from '@react-google-maps/api';
 
 function App() {
   const [source, setSource] = useState({ lat: null, lng: null, address: '' });
   const [destination, setDestination] = useState({ lat: null, lng: null, address: '' });
-  const googleMapsApiKey = "AlzaSyWFPE_9dvDHUYTj1KknvlTwA9C1_fSbSPB"; 
-  return (
-    <Router>
-       <RideProvider> 
-      <Routes>
-        <Route path="/" element={<Dashboard />} />
-        <Route path="/login" element={<Login />} />
-        <Route path="/signup" element={<Signup />} />
-        <Route path="/home" element={<Home />} />
-        <Route path="/profile" element={<Profile />} />
-        <Route path="/search-ride" element={<SearchRide googleMapsApiKey={googleMapsApiKey} />} />
-       
-        <Route path="/publish-ride" element={
-          <div>
-            <PublishRide setSource={setSource} setDestination={setDestination} googleMapsApiKey={googleMapsApiKey} />
-            {source.lat && destination.lat && (
-              <MapComponent source={source} destination={destination} googleMapsApiKey={googleMapsApiKey} />
-            )}
-          </div>
-        } />
-        <Route path="/ride-booking/:rideId" element={<RideBooking />} />
-        <Route path="/notifications" element={<NotificationsPage />} />
-        <Route path="/payment/:rideId" element={<Payment />} />
-        <Route path="/your-rides" element={<YourRides />} />
-        <Route path="/available-rides" element={<AvailableRidesPage />} />
 
-      </Routes>
-      </RideProvider> 
-    </Router>
+  const googleMapsApiKey = "AlzaSyCfIZ_pMopID6nYkLALRIaWoXGuKb8esJq"; // Replace with a valid key
+
+  return (
+    
+       <LoadScript googleMapsApiKey={googleMapsApiKey} libraries={['places']}>
+      <RideProvider>
+      <Router>
+        <Routes>
+          {/* Core Pages */}
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/login" element={<Login />} />
+          <Route path="/signup" element={<Signup />} />
+          <Route path="/home" element={<Home />} />
+          <Route path="/profile" element={<Profile />} />
+
+          {/* Search Ride */}
+          <Route
+            path="/search-ride"
+            element={
+              <div>
+                <SearchRide 
+               
+                  googleMapsApiKey={googleMapsApiKey}
+                  source={source}
+                  destination={destination}
+                  />
+              </div>
+            }
+          />
+
+          {/* Publish Ride */}
+          <Route
+            path="/publish-ride"
+            element={
+              <div>
+                <PublishRide
+                  setSource={setSource}
+                  setDestination={setDestination}
+                  googleMapsApiKey={googleMapsApiKey}
+                />
+                {source.lat && destination.lat && (
+                  <MapComponent
+                    googleMapsApiKey={googleMapsApiKey}
+                    source={source}
+                    destination={destination}
+                  />
+                )}
+              </div>
+            }
+          />
+
+          {/* Other Routes */}
+          <Route path="/ride-booking/:rideId" element={<RideBooking />} />
+          <Route path="/notifications" element={<NotificationsPage />} />
+          <Route path="/payment/:rideId" element={<Payment />} />
+          <Route path="/your-rides" element={<YourRides />} />
+          <Route path="/available-rides" element={<AvailableRidesPage />} />
+          <Route path="/map-view/:sourceLat/:sourceLng/:destinationLat/:destinationLng" element={<Map />} />
+        </Routes>
+        </Router>
+      </RideProvider>
+      </LoadScript>
+   
   );
 }
 

@@ -1,11 +1,15 @@
-// src/pages/SearchRide.jsx
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRides } from '../context/RideContext';
+import MapComponent from '../components/MapComponent';
 
 function SearchRide({ googleMapsApiKey }) {
-  const [source, setSource] = useState('kichha, uttarakhand, india');
-  const [destination, setDestination] = useState('delhi, india');
+  const [source, setSource] = useState('Kichha, Uttarakhand, India');
+  const [destination, setDestination] = useState('Delhi, India');
+  const [sourceLat, setSourceLat] = useState(28.9115087);
+  const [sourceLng, setSourceLng] = useState(79.5153705);
+  const [destinationLat, setDestinationLat] = useState(28.7040592);
+  const [destinationLng, setDestinationLng] = useState(77.10249019999999);
   const [date, setDate] = useState('');
   const [seats, setSeats] = useState(1);
   const { rides, fetchRides } = useRides();
@@ -21,7 +25,8 @@ function SearchRide({ googleMapsApiKey }) {
         const script = document.createElement('script');
         script.src = src;
         script.async = true;
-        script.onload = () => resolve();
+        script.onload = () => resolve(); 
+
         document.body.appendChild(script);
       });
     };
@@ -40,48 +45,77 @@ function SearchRide({ googleMapsApiKey }) {
 
         autocompleteSource.addListener('place_changed', () => {
           const place = autocompleteSource.getPlace();
+          
           setSource(place.formatted_address);
+          setSourceLat(place.geometry.location.lat());
+          setSourceLng(place.geometry.location.lng());
         });
 
         autocompleteDestination.addListener('place_changed', () => {
           const place = autocompleteDestination.getPlace();
-          setDestination(place.formatted_address);
+          setDestination(place.formatted_address);   
+
+          setDestinationLat(place.geometry.location.lat());
+          setDestinationLng(place.geometry.location.lng());
         });
       });
   }, [googleMapsApiKey]);
 
-  const handleSearch = () => {
-    const normalizedSource = source.trim().toLowerCase();
-    const normalizedDestination = destination.trim().toLowerCase();
-    const normalizedDate = date; // Assuming date format is correct (YYYY-MM-DD)
-    const seatCount = parseInt(seats, 10); // Convert to integer
+  const handleSearch = async () => {
+   
 
-    console.log("Normalized Search Criteria:", normalizedSource, normalizedDestination, normalizedDate, seatCount);
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // meters (Earth's radius)
+      const φ1 = toRadians(lat1);
+      const φ2 = toRadians(lat2);
+      const Δφ = φ2 - φ1;
+      const λ1 = toRadians(lon1);
+      const λ2 = toRadians(lon2);
+      const Δλ = λ2 - λ1;
 
-    const filteredRides = rides.filter((ride) => {
-      const rideSource = ride.source.trim().toLowerCase();
-      const rideDestination = ride.destination.trim().toLowerCase();
-      const rideDate = ride.date; // Assuming date is string format (YYYY-MM-DD)
-      const rideSeats = ride.seats; // Assuming seats is a number
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 
-      console.log("Comparing Ride:", rideSource, rideDestination, rideDate, rideSeats); // Log for debugging
+      return Math.round(R * c); // Distance in meters, round to nearest meter
+    };
 
-      return (
-        rideSource === normalizedSource &&
-        rideDestination === normalizedDestination &&
-        rideDate === normalizedDate &&
-        rideSeats >= seatCount // Check if seats are enough
+    const toRadians = (degrees) => degrees * Math.PI / 180;
+
+  
+    const nearbyRides = [];
+    const thresholdDistance = 50000; // 50 km in meters (adjust as needed)
+
+    for (const ride of rides) {
+      const distanceToRideSource = calculateDistance(
+        sourceLat, sourceLng, ride.sourceLat, ride.sourceLng
       );
-    });
+      const distanceToRideDest = calculateDistance(
+        destinationLat, destinationLng, ride.destinationLat, ride.destinationLng
+      );
 
-    console.log("Filtered Results:", filteredRides); // Log filtered results to check
-
-    if (filteredRides.length > 0) {
-      navigate('/available-rides', { state: { results: filteredRides } });
-    } else {
-      alert("No rides found matching your search criteria.");
+      if (distanceToRideSource <= thresholdDistance || distanceToRideDest <= thresholdDistance) {
+        nearbyRides.push(ride);
+      }
     }
+
+    if (nearbyRides.length > 0) {
+      navigate('/available-rides', { state: { results: nearbyRides,sourceLat,sourceLng,destinationLat,destinationLng } });
+    } else {
+      alert('No rides found matching your search criteria and nearby locations.');
+    }
+    
+  <MapComponent
+  googleMapsApiKey={googleMapsApiKey}
+  sourceLat={sourceLat}
+  sourceLng={sourceLng}
+  destinationLat={destinationLat}
+  destinationLng={destinationLng}
+/>
+
   };
+
 
   return (
     <div>

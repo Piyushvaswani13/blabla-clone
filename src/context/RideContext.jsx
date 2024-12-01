@@ -52,7 +52,7 @@ const fetchRides = useCallback(async () => {
       ...doc.data(),
     }));
     
-  
+    console.log("Fetched Rides:", fetchedRides);
     
     setRides(fetchedRides); // Update state with fetched data
   } catch (error) {

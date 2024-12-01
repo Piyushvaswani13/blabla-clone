@@ -13,93 +13,123 @@ import { useAuth } from "../context/AuthContext";
 
 function YourRides() {
   const { currentUser } = useAuth();
+  const [userRole, setUserRole] = useState(null);
   const [bookingRequests, setBookingRequests] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
-  const [isTripAccepted, setIsTripAccepted] = useState(false);
+  // const [isTripAccepted, setIsTripAccepted] = useState(false);
 
   useEffect(() => {
     if (currentUser) {
-      fetchBookingRequests();
+      fetchUserRole();
     }
   }, [currentUser]);
 
-  const fetchBookingRequests = async () => {
-    if (!currentUser?.uid) return;
-
-    const requests = [];
-    const userRole = currentUser?.role;
-
-    if (userRole === "driver") {
-      const driverRidesQuery = query(
-        collection(db, "rides"),
-        where("driverId", "==", currentUser.uid)
-      );
-      const ridesSnapshot = await getDocs(driverRidesQuery);
-
-      for (const ride of ridesSnapshot.docs) {
-        const userRideQuery = query(
-          collection(db, "userRide"),
-          where("tripId", "==", ride.id)
-        );
-        const userRideSnapshot = await getDocs(userRideQuery);
-
-        for (const request of userRideSnapshot.docs) {
-          const userRef = doc(db, "users", request.data().userId);
-          const userSnapshot = await getDoc(userRef);
-
-          if (userSnapshot.exists()) {
-            requests.push({
-              ...request.data(),
-              id: request.id,
-              name: userSnapshot.data().name,
-              email: userSnapshot.data().email,
-              contact: userSnapshot.data().contact,
-              prefrences: userSnapshot.data().prefrences || [],
-              status: request.data().status,
-            });
-          }
-        }
-      }
-      setBookingRequests(requests);
+  useEffect(() => {
+    if (userRole) {
+      fetchBookingRequests();
     }
+  }, [userRole]);
 
-    if (userRole === "passenger") {
-      const passengerQuery = query(
-        collection(db, "userRide"),
-        where("userId", "==", currentUser.uid)
-      );
-      const passengerSnapshot = await getDocs(passengerQuery);
+  const fetchUserRole = async () => {
+    try {
+      const userRef = doc(db, "users", currentUser.uid);
+      const userSnapshot = await getDoc(userRef);
 
-      for (const rideRequest of passengerSnapshot.docs) {
-        const tripRef = doc(db, "rides", rideRequest.data().tripId);
-        const tripSnapshot = await getDoc(tripRef);
-
-        if (tripSnapshot.exists()) {
-          setSelectedProfile({
-            ...rideRequest.data(),
-            id: rideRequest.id,
-            driverName: tripSnapshot.data().driverName,
-            tripDetails: tripSnapshot.data(),
-            driverContact: tripSnapshot.data().driverContact,
-          });
-        }
+      if (userSnapshot.exists()) {
+        const userData = userSnapshot.data();
+        console.log("User Role:", userData.role);
+        setUserRole(userData.role);
+      } else {
+        console.error("User document not found");
       }
+    } catch (error) {
+      console.error("Error fetching user role:", error);
     }
   };
 
+  const fetchBookingRequests = async () => {
+    try {
+      if (!currentUser?.uid || !userRole) return;
+  
+      const requests = [];
+      if (userRole === "driver") {
+        const driverRidesQuery = query(
+          collection(db, "rides"),
+          where("driverId", "==", currentUser.uid)
+        );
+        const ridesSnapshot = await getDocs(driverRidesQuery);
+  
+        for (const ride of ridesSnapshot.docs) {
+          const userRideQuery = query(
+            collection(db, "userRide"),
+            where("tripId", "==", ride.id)
+          );
+          const userRideSnapshot = await getDocs(userRideQuery);
+  
+          for (const request of userRideSnapshot.docs) {
+            const userRef = doc(db, "users", request.data().userId);
+            const userSnapshot = await getDoc(userRef);
+  
+            if (userSnapshot.exists()) {
+              requests.push({
+                ...request.data(),
+                id: request.id,
+                name: userSnapshot.data().name,
+                email: userSnapshot.data().email,
+                contact: userSnapshot.data().contact,
+                prefrences: userSnapshot.data().prefrences || [],
+                status: request.data().status,
+              });
+            }
+          }
+        }
+        setBookingRequests(requests);
+        console.log("Driver Booking Requests:", requests);
+      }
+  
+      if (userRole === "passenger") {
+        const passengerQuery = query(
+          collection(db, "userRide"),
+          where("userId", "==", currentUser.uid)
+        );
+        const passengerSnapshot = await getDocs(passengerQuery);
+  
+        for (const rideRequest of passengerSnapshot.docs) {
+          const tripRef = doc(db, "rides", rideRequest.data().tripId);
+          const tripSnapshot = await getDoc(tripRef);
+  
+          if (tripSnapshot.exists()) {
+            const tripData = {
+              ...rideRequest.data(),
+              id: rideRequest.id,
+              driverName: tripSnapshot.data().driverName,
+              driverContact: tripSnapshot.data().driverContact,
+              status: rideRequest.data().status,
+            };
+  
+            // Update only if it matches the 'accepted' status
+            if (rideRequest.data().status === "accepted") {
+              setSelectedProfile(tripData);
+            }
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching booking requests:", error);
+    }
+  };
+  
+
   const handleAccept = async (requestId) => {
     try {
-      // Update the status in Firestore
       const requestRef = doc(db, "userRide", requestId);
       await updateDoc(requestRef, { status: "accepted" });
 
-      // Fetch the accepted request details immediately
       const requestSnapshot = await getDoc(requestRef);
 
       if (requestSnapshot.exists()) {
         const requestData = requestSnapshot.data();
 
-        // Fetch passenger/user details
         const userRef = doc(db, "users", requestData.userId);
         const userSnapshot = await getDoc(userRef);
 
@@ -112,12 +142,12 @@ function YourRides() {
             prefrences: userSnapshot.data().prefrences || [],
           };
 
-          // Update the selectedProfile state to show passenger details
           setSelectedProfile(passengerDetails);
-          setIsTripAccepted(true);
+          // setIsTripAccepted(true);
 
-          // Remove the accepted request from the pending requests list
-          setBookingRequests((prev) => prev.filter((request) => request.id !== requestId));
+          setBookingRequests((prev) =>
+            prev.filter((request) => request.id !== requestId)
+          );
 
           alert("Ride request accepted!");
         }
@@ -132,7 +162,9 @@ function YourRides() {
       const requestRef = doc(db, "userRide", requestId);
       await updateDoc(requestRef, { status: "rejected" });
 
-      setBookingRequests((prev) => prev.filter((request) => request.id !== requestId));
+      setBookingRequests((prev) =>
+        prev.filter((request) => request.id !== requestId)
+      );
       alert("Ride request rejected!");
     } catch (error) {
       console.error("Error rejecting ride request:", error);
@@ -169,7 +201,7 @@ function YourRides() {
             border: "1px solid #ddd",
           }}
         >
-          {currentUser?.role === "driver" ? (
+          {userRole === "driver" ? (
             <>
               <h3>Passenger Details</h3>
               <p>
@@ -194,9 +226,9 @@ function YourRides() {
               </p>
               <p>
                 <strong>Preferences:</strong>{" "}
-                {selectedProfile.preferences &&
-                selectedProfile.preferences.length > 0
-                  ? selectedProfile.preferences.join(", ")
+                {selectedProfile.prefrences &&
+                selectedProfile.prefrences.length > 0
+                  ? selectedProfile.prefrences.join(", ")
                   : "No preferences set"}
               </p>
             </>
@@ -210,9 +242,7 @@ function YourRides() {
         </div>
       )}
 
-      {!selectedProfile &&
-        currentUser?.role === "driver" && 
-          !selectedProfile?.status === "cancelled" &&
+      {userRole === "driver" &&
         bookingRequests.length > 0 &&
         bookingRequests.map((request) => (
           <div
@@ -248,7 +278,7 @@ function YourRides() {
           </div>
         ))}
 
-      {!selectedProfile && bookingRequests.length === 0 && (
+      {(!selectedProfile && bookingRequests.length === 0) && (
         <p>No rides or requests found.</p>
       )}
     </div>

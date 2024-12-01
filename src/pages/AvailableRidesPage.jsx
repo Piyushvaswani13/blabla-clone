@@ -2,18 +2,19 @@ import React, { useState, useEffect, useCallback } from "react";
 import { useLocation } from "react-router-dom";
 import RideCard from "../components/RideCard";
 import "./AvailableRidesPage.css";
+import MapUtils from "./MapUtils";
 
 function AvailableRidesPage() {
   const location = useLocation();
   const { results: initialRides } = location.state || { results: [] };
-
+const {sourceLat, sourceLng, destinationLat, destinationLng} = location.state ||  {sourceLat:0.0, sourceLng:0.0, destinationLat:0.0, destinationLng:0.0} ;
   const [rides, setRides] = useState(initialRides);
   const [filters, setFilters] = useState({
     max2InTheBack: false,
     smokingAllowed: false,
     petsAllowed: false,
   });
-  const [isFilterVisible, setFilterVisible] = useState(false); // State for toggling filter visibility
+  const [isFilterVisible, setFilterVisible] = useState(false); 
   const [sortBy, setSortBy] = useState("");
 
   const applyFilters = useCallback(() => {
@@ -36,6 +37,18 @@ function AvailableRidesPage() {
       if (criteria === "seats") return parseInt(b.seats) - parseInt(a.seats);
       if (criteria === "price") return parseFloat(a.price) - parseFloat(b.price);
       if (criteria === "date") return new Date(a.date) - new Date(b.date);
+      if (criteria === "departure") {
+        const bDistance= MapUtils.calculateDistance(sourceLat,sourceLng,b.sourceLat, b.sourceLng) ;
+        const aDistance= MapUtils.calculateDistance(sourceLat,sourceLng,a.sourceLat, a.sourceLng);
+        console.log(a.carModel,b.carModel,bDistance,aDistance,b.sourceLat,b.sourceLng,a.sourceLat,a.sourceLng);
+        return aDistance - bDistance ;
+      } 
+      if (criteria === "arrival") {
+        const bDistance= MapUtils.calculateDistance(destinationLat,destinationLng,b.destinationLat, b.destinationLng) ;
+        const aDistance= MapUtils.calculateDistance(destinationLat,destinationLng,a.destinationLat, a.destinationLng);
+        console.log(a.carModel,b.carModel,bDistance,aDistance,b.sourceLat,b.sourceLng,a.sourceLat,a.sourceLng);
+        return aDistance - bDistance ;
+      } 
       return 0;
     });
     setRides(sortedRides);
@@ -65,6 +78,8 @@ function AvailableRidesPage() {
             Sort By:
             <select value={sortBy} onChange={(e) => handleSort(e.target.value)}>
               <option value="">None</option>
+              <option value="departure">Close to departure</option>
+              <option value="arrival">Close to Arrival</option>
               <option value="seats">Seats high to low</option>
               <option value="price">Price low to high</option>
               <option value="date">Date</option>
@@ -122,3 +137,4 @@ function AvailableRidesPage() {
 }
 
 export default AvailableRidesPage;
+
