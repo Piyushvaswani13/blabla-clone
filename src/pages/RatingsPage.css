@@ -1,0 +1,50 @@
+.ratings-page {
+    padding: 20px;
+    max-width: 600px;
+    margin: auto;
+  }
+  
+  .title {
+    text-align: center;
+    font-weight: bold;
+    margin-bottom: 20px;
+  }
+  
+  .no-trips {
+    text-align: center;
+    color: #666;
+  }
+  
+  .trips-container {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .trip-card {
+    padding: 15px;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    background-color: #f9f9f9;
+  }
+  
+  .rating-container {
+    margin-top: 10px;
+  }
+  
+  .submit-btn {
+    display: block;
+    margin: 20px auto;
+    background-color: green;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 5px;
+    cursor: pointer;
+    font-size: 16px;
+  }
+  
+  .submit-btn:hover {
+    background-color: darkgreen;
+  }
+  

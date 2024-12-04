@@ -12,10 +12,12 @@ import RideBooking from './pages/RideBooking';
 import NotificationsPage from './pages/NotificationsPage';
 import Payment from './pages/Payment';
 import YourRides from './pages/YourRides';
+import RatingsPage from './pages/RatingsPage';
 import AvailableRidesPage from './pages/AvailableRidesPage';
 import Dashboard from './pages/Dashboard';
 import { RideProvider } from './context/RideContext';
 import { LoadScript } from '@react-google-maps/api';
+import RateDriver from './pages/RateDriver';
 
 function App() {
   const [source, setSource] = useState({ lat: null, lng: null, address: '' });
@@ -77,6 +79,8 @@ function App() {
           <Route path="/notifications" element={<NotificationsPage />} />
           <Route path="/payment/:rideId" element={<Payment />} />
           <Route path="/your-rides" element={<YourRides />} />
+          <Route path="/ratings" element={<RatingsPage />} />
+          <Route path="/rate-driver" element={<RateDriver />} />
           <Route path="/available-rides" element={<AvailableRidesPage />} />
           <Route path="/map-view/:sourceLat/:sourceLng/:destinationLat/:destinationLng" element={<Map />} />
         </Routes>

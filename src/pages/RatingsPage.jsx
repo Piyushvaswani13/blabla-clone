@@ -39,13 +39,13 @@ function RatingsPage() {
 
       const passengerSnapshot = await getDocs(passengerQuery);
       passengerSnapshot.forEach((doc) => {
-        // Fetch passenger list for the trip
-        fetchPassengerList(userId).then((passengers) => {
-          setPassengerList((prevList) => ({
-            ...prevList,
-            [userId]: passengers,
-          }));
-        });
+ // Fetch passenger list for the trip
+ fetchPassengerList(userId).then((passengers) => {
+  setPassengerList((prevList) => ({
+    ...prevList,
+    [userId]: passengers,
+  }));
+});
 
         allTrips.push({
           id: doc.id,
@@ -57,6 +57,7 @@ function RatingsPage() {
           ...doc.data(),
         });
       });
+     
 
       // Step 2: Get trips where the currentUser is the driver
       const driverQuery = query(
@@ -69,6 +70,8 @@ function RatingsPage() {
       driverSnapshot.forEach((doc) => {
         const tripData = doc.data();
         const tripId = doc.id;
+
+       
 
         allTrips.push({
           id: doc.id,
@@ -98,9 +101,11 @@ function RatingsPage() {
 
       const passengerSnapshot = await getDocs(passengerQuery);
       passengerSnapshot.forEach((doc) => {
+        console.log(doc.data())
         passengers.push(doc.data().userId);
       });
 
+      console.log("Fetched passengers for trip:", userId, passengers); // Debugging log
       return passengers;
     } catch (error) {
       console.error("Error fetching passenger list:", error);
@@ -135,29 +140,16 @@ function RatingsPage() {
         <p>No completed trips to rate.</p>
       ) : (
         completedTrips.map((trip) => (
+          console.log(trip),
           <div key={trip.id} style={{ marginBottom: "20px" }}>
             <h3>Trip: {trip.tripId}</h3>
             <p>
               <strong>Role:</strong> {trip.role}
             </p>
             {trip.role === "passenger" ? (
-              <div>
-                <p>
-                  <strong>Driver:</strong> {trip.driverName || currentUser.name}
-                </p>
-                <div style={{ marginTop: "10px" }}>
-                  <ReactStars
-                    count={5}
-                    value={ratings[trip.id] || 0}
-                    onChange={(newRating) =>
-                      handleRatingChange(trip.id, newRating, "passenger")
-                    }
-                    size={30}
-                    isHalf={true}
-                    activeColor="#ffd700"
-                  />
-                </div>
-              </div>
+              <p>
+                <strong>Driver:</strong> {trip.driverName || currentUser.name}
+              </p>
             ) : (
               <div>
                 <p>
@@ -168,20 +160,26 @@ function RatingsPage() {
                     <li key={index}>{passenger}</li>
                   ))}
                 </ul>
-                <div style={{ marginTop: "10px" }}>
-                  <ReactStars
-                    count={5}
-                    value={ratings[trip.id] || 0}
-                    onChange={(newRating) =>
-                      handleRatingChange(trip.id, newRating, "driver")
-                    }
-                    size={30}
-                    isHalf={true}
-                    activeColor="#ffd700"
-                  />
-                </div>
               </div>
             )}
+            {/* <p>
+              <strong>Source:</strong> {trip.source}
+            </p>
+            <p>
+              <strong>Destination:</strong> {trip.destination}
+            </p> */}
+            <div style={{ marginTop: "10px" }}>
+              <ReactStars
+                count={5}
+                value={ratings[trip.id] || 0}
+                onChange={(newRating) =>
+                  handleRatingChange(trip.id, newRating, trip.role)
+                }
+                size={30}
+                isHalf={true}
+                activeColor="#ffd700"
+              />
+            </div>
           </div>
         ))
       )}

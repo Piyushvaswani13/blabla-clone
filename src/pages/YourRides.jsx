@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { db } from "../services/firebase";
 import {
   collection,
@@ -15,8 +16,9 @@ function YourRides() {
   const { currentUser } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [bookingRequests, setBookingRequests] = useState([]);
+  const [completedTrips, setCompletedTrips] = useState([]);  // New state for completed trips
   const [selectedProfile, setSelectedProfile] = useState(null);
-  // const [isTripAccepted, setIsTripAccepted] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     if (currentUser) {
@@ -27,6 +29,7 @@ function YourRides() {
   useEffect(() => {
     if (userRole) {
       fetchBookingRequests();
+      fetchCompletedTrips();  // Fetch completed trips when userRole changes
     }
   }, [userRole]);
 
@@ -36,9 +39,7 @@ function YourRides() {
       const userSnapshot = await getDoc(userRef);
 
       if (userSnapshot.exists()) {
-        const userData = userSnapshot.data();
-        console.log("User Role:", userData.role);
-        setUserRole(userData.role);
+        setUserRole(userSnapshot.data().role);
       } else {
         console.error("User document not found");
       }
@@ -50,7 +51,7 @@ function YourRides() {
   const fetchBookingRequests = async () => {
     try {
       if (!currentUser?.uid || !userRole) return;
-  
+
       const requests = [];
       if (userRole === "driver") {
         const driverRidesQuery = query(
@@ -58,18 +59,18 @@ function YourRides() {
           where("driverId", "==", currentUser.uid)
         );
         const ridesSnapshot = await getDocs(driverRidesQuery);
-  
+
         for (const ride of ridesSnapshot.docs) {
           const userRideQuery = query(
             collection(db, "userRide"),
             where("tripId", "==", ride.id)
           );
           const userRideSnapshot = await getDocs(userRideQuery);
-  
+
           for (const request of userRideSnapshot.docs) {
             const userRef = doc(db, "users", request.data().userId);
             const userSnapshot = await getDoc(userRef);
-  
+
             if (userSnapshot.exists()) {
               requests.push({
                 ...request.data(),
@@ -77,27 +78,27 @@ function YourRides() {
                 name: userSnapshot.data().name,
                 email: userSnapshot.data().email,
                 contact: userSnapshot.data().contact,
-                prefrences: userSnapshot.data().prefrences || [],
+                preferences: userSnapshot.data().preferences || [],
                 status: request.data().status,
+                tripId: ride.id,  // Ensure you have the correct tripId
               });
             }
           }
         }
         setBookingRequests(requests);
-        console.log("Driver Booking Requests:", requests);
       }
-  
+
       if (userRole === "passenger") {
         const passengerQuery = query(
           collection(db, "userRide"),
           where("userId", "==", currentUser.uid)
         );
         const passengerSnapshot = await getDocs(passengerQuery);
-  
+
         for (const rideRequest of passengerSnapshot.docs) {
           const tripRef = doc(db, "rides", rideRequest.data().tripId);
           const tripSnapshot = await getDoc(tripRef);
-  
+
           if (tripSnapshot.exists()) {
             const tripData = {
               ...rideRequest.data(),
@@ -105,9 +106,8 @@ function YourRides() {
               driverName: tripSnapshot.data().driverName,
               driverContact: tripSnapshot.data().driverContact,
               status: rideRequest.data().status,
+              tripId: rideRequest.data().tripId,  // Ensure you have the correct tripId
             };
-  
-            // Update only if it matches the 'accepted' status
             if (rideRequest.data().status === "accepted") {
               setSelectedProfile(tripData);
             }
@@ -118,168 +118,219 @@ function YourRides() {
       console.error("Error fetching booking requests:", error);
     }
   };
-  
 
-  const handleAccept = async (requestId) => {
+  const fetchCompletedTrips = async () => {
+    try {
+      if (!currentUser?.uid || !userRole) return;
+
+      const completedTripsData = [];
+      if (userRole === "driver") {
+        const driverRidesQuery = query(
+          collection(db, "rides"),
+          where("driverId", "==", currentUser.uid)
+        );
+        const ridesSnapshot = await getDocs(driverRidesQuery);
+
+        for (const ride of ridesSnapshot.docs) {
+          const userRideQuery = query(
+            collection(db, "userRide"),
+            where("tripId", "==", ride.id),
+            where("status", "==", "completed") // Filter for completed trips
+          );
+        
+          const userRideSnapshot = await getDocs(userRideQuery);
+
+          for (const request of userRideSnapshot.docs) {
+            const userRef = doc(db, "users", request.data().userId);
+            const userSnapshot = await getDoc(userRef);
+            if (userSnapshot.exists()) {
+              completedTripsData.push({
+                ...request.data(),
+                id: request.id,
+                name: userSnapshot.data().name,
+                email: userSnapshot.data().email,
+                contact: userSnapshot.data().contact,
+                preferences: userSnapshot.data().preferences || [],
+                status: request.data().status,
+                tripId: ride.id, // Ensure you have the correct tripId for the completed trip
+              });
+            }
+          }
+        }
+        setCompletedTrips(completedTripsData);
+      }
+
+      if (userRole === "passenger") {
+        const passengerQuery = query(
+          collection(db, "userRide"),
+          where("userId", "==", currentUser.uid),
+          where("status", "==", "completed") // Filter for completed trips for passengers
+        );
+        const passengerSnapshot = await getDocs(passengerQuery);
+
+        for (const rideRequest of passengerSnapshot.docs) {
+          const tripRef = doc(db, "rides", rideRequest.data().tripId);
+          const tripSnapshot = await getDoc(tripRef);
+
+          if (tripSnapshot.exists()) {
+            const tripData = {
+              ...rideRequest.data(),
+              id: rideRequest.id,
+              driverName: tripSnapshot.data().driverName,
+              driverContact: tripSnapshot.data().driverContact,
+              status: rideRequest.data().status,
+              tripId: rideRequest.data().tripId,  // Ensure you have the correct tripId for the completed trip
+            };
+            setCompletedTrips((prevTrips) => [...prevTrips, tripData]);
+          }
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching completed trips:", error);
+    }
+  };
+
+  const handleAction = async (requestId, action) => {
     try {
       const requestRef = doc(db, "userRide", requestId);
-      await updateDoc(requestRef, { status: "accepted" });
+      await updateDoc(requestRef, { status: action });
 
-      const requestSnapshot = await getDoc(requestRef);
-
-      if (requestSnapshot.exists()) {
+      if (action === "accepted") {
+        const requestSnapshot = await getDoc(requestRef);
         const requestData = requestSnapshot.data();
-
         const userRef = doc(db, "users", requestData.userId);
         const userSnapshot = await getDoc(userRef);
 
         if (userSnapshot.exists()) {
-          const passengerDetails = {
+          setSelectedProfile({
             ...requestData,
             id: requestId,
             name: userSnapshot.data().name,
             contact: userSnapshot.data().contact,
-            prefrences: userSnapshot.data().prefrences || [],
-          };
-
-          setSelectedProfile(passengerDetails);
-          // setIsTripAccepted(true);
-
-          setBookingRequests((prev) =>
-            prev.filter((request) => request.id !== requestId)
-          );
-
-          alert("Ride request accepted!");
+            preferences: userSnapshot.data().preferences || [],
+            tripId: requestData.tripId,  // Ensure tripId is included
+          });
         }
       }
-    } catch (error) {
-      console.error("Error accepting ride request:", error);
-    }
-  };
-
-  const handleReject = async (requestId) => {
-    try {
-      const requestRef = doc(db, "userRide", requestId);
-      await updateDoc(requestRef, { status: "rejected" });
 
       setBookingRequests((prev) =>
         prev.filter((request) => request.id !== requestId)
       );
-      alert("Ride request rejected!");
+      alert(`Ride request ${action}!`);
     } catch (error) {
-      console.error("Error rejecting ride request:", error);
+      console.error(`Error ${action} ride request:`, error);
     }
   };
 
-  const handleCancelTrip = async () => {
+  const handleCompleteTrip = async () => {
     try {
       if (selectedProfile?.id) {
-        const requestRef = doc(db, "userRide", selectedProfile.id);
-        await updateDoc(requestRef, { status: "cancelled" });
-
-        setSelectedProfile((prev) => ({ ...prev, status: "cancelled" }));
-        alert("Trip cancelled successfully!");
+        await updateDoc(doc(db, "userRide", selectedProfile.id), {
+          status: "completed",
+        });
+        navigate("/ratings", {
+          state: {
+            driverId: currentUser.uid,
+            userId: selectedProfile.userId,
+            tripId: selectedProfile.tripId,  // Pass the correct tripId here
+          },
+        });
       }
     } catch (error) {
-      console.error("Error cancelling trip:", error);
+      console.error("Error completing trip:", error);
+    }
+  };
+
+  const handleRateDriver = async (tripId) => {
+    try {
+      navigate("/rate-driver", {
+        state: {
+          tripId,  // Ensure the correct tripId is passed here
+          passengerId: currentUser.uid,
+        },
+      });
+    } catch (error) {
+      console.error("Error navigating to rating page:", error);
+    }
+  };
+
+  const handleTripRated = async (tripId) => {
+    try {
+      // Update the ride status to "rated" after the trip has been rated
+      const tripRef = doc(db, "userRide", tripId);
+      await updateDoc(tripRef, { status: "rated" });
+
+      // Filter out the rated trip from the completed trips list
+      setCompletedTrips((prevTrips) =>
+        prevTrips.filter((trip) => trip.tripId !== tripId)
+      );
+    } catch (error) {
+      console.error("Error marking trip as rated:", error);
     }
   };
 
   return (
-    <div>
-      <h2>Your Rides</h2>
+    <div className="your-rides">
+      <h1>Your Rides</h1>
+      <div className="booking-requests">
+        {bookingRequests.length > 0 ? (
+          bookingRequests.map((request) => (
+            <div key={request.id} className="request-item">
+              <p>{request.name}</p>
+              <p>{request.status}</p>
+              {request.status === "pending" && (
+                <div>
+                  <button
+                    onClick={() => handleAction(request.id, "accepted")}
+                  >
+                    Accept
+                  </button>
+                  <button
+                    onClick={() => handleAction(request.id, "rejected")}
+                  >
+                    Reject
+                  </button>
+                </div>
+              )}
+            </div>
+          ))
+        ) : (
+          <p>No booking requests.</p>
+        )}
+      </div>
 
-      {selectedProfile?.status === "cancelled" && (
-        <p style={{ color: "red", fontWeight: "bold" }}>Trip Cancelled</p>
-      )}
+      <div className="completed-trips">
+        <h2>Completed Trips</h2>
+        {completedTrips.length > 0 ? (
+          completedTrips.map((trip) => (
+            console.log(trip),
+            <div key={trip.tripId} className="trip-item">
+              <p>Driver Name : {trip.driverName}</p>
+              <p>Status : {trip.status}</p>
+              {trip.status !== "rated" && (
+                 <button
+                 onClick={() => {
+                   handleRateDriver(trip.tripId);
+                   handleTripRated(trip.id); // Mark trip as rated immediately
+                 }}
+               >
+                  Rate Driver
+                </button>
+              )}
+            </div>
+          ))
+        ) : (
+          <p>No completed trips.</p>
+        )}
+      </div>
 
-      {selectedProfile && selectedProfile.status === "accepted" && (
-        <div
-          style={{
-            marginTop: "20px",
-            padding: "10px",
-            border: "1px solid #ddd",
-          }}
-        >
-          {userRole === "driver" ? (
-            <>
-              <h3>Passenger Details</h3>
-              <p>
-                <strong>Name:</strong> {selectedProfile.name}
-              </p>
-              <p>
-                <strong>Contact:</strong> {selectedProfile.contact}
-              </p>
-              <p>
-                <strong>Preferences:</strong>{" "}
-                {selectedProfile.prefrences.join(", ") || "No preferences set"}
-              </p>
-            </>
-          ) : (
-            <>
-              <h3>Trip Details</h3>
-              <p>
-                <strong>Driver Name:</strong> {selectedProfile.driverName}
-              </p>
-              <p>
-                <strong>Contact:</strong> {selectedProfile.driverContact}
-              </p>
-              <p>
-                <strong>Preferences:</strong>{" "}
-                {selectedProfile.prefrences &&
-                selectedProfile.prefrences.length > 0
-                  ? selectedProfile.prefrences.join(", ")
-                  : "No preferences set"}
-              </p>
-            </>
-          )}
-          <button
-            onClick={handleCancelTrip}
-            style={{ color: "white", backgroundColor: "red" }}
-          >
-            Cancel Trip
-          </button>
+      {selectedProfile && (
+        <div className="trip-details">
+          <h2>Trip Details</h2>
+          <p>Passenger: {selectedProfile.name}</p>
+          <p>Contact: {selectedProfile.contact}</p>
+          <button onClick={handleCompleteTrip}>Complete Trip</button>
         </div>
-      )}
-
-      {userRole === "driver" &&
-        bookingRequests.length > 0 &&
-        bookingRequests.map((request) => (
-          <div
-            key={request.id}
-            style={{
-              marginBottom: "20px",
-              padding: "10px",
-              border: "1px solid #ddd",
-            }}
-          >
-            <p>
-              <strong>Name:</strong> {request.name}
-            </p>
-            <p>
-              <strong>Email:</strong> {request.email}
-            </p>
-            <button
-              onClick={() => handleAccept(request.id)}
-              style={{
-                marginRight: "10px",
-                color: "white",
-                backgroundColor: "green",
-              }}
-            >
-              Accept
-            </button>
-            <button
-              onClick={() => handleReject(request.id)}
-              style={{ color: "white", backgroundColor: "red" }}
-            >
-              Reject
-            </button>
-          </div>
-        ))}
-
-      {(!selectedProfile && bookingRequests.length === 0) && (
-        <p>No rides or requests found.</p>
       )}
     </div>
   );
