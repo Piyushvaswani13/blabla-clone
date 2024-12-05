@@ -11,6 +11,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import { useAuth } from "../context/AuthContext";
+import './YourRides.css';
 
 function YourRides() {
   const { currentUser } = useAuth();
@@ -271,21 +272,26 @@ function YourRides() {
 
   return (
     <div className="your-rides">
-      <h1>Your Rides</h1>
-      <div className="booking-requests">
+      <h1 className="title">Your Rides</h1>
+
+      {/* Booking Requests Section */}
+      <div className="section">
+        <h2 className="section-title">Booking Requests</h2>
         {bookingRequests.length > 0 ? (
           bookingRequests.map((request) => (
-            <div key={request.id} className="request-item">
-              <p>{request.name}</p>
-              <p>{request.status}</p>
+            <div key={request.id} className="card">
+              <p><strong>Passenger:</strong> {request.name}</p>
+              <p><strong>Status:</strong> {request.status}</p>
               {request.status === "pending" && (
-                <div>
+                <div className="button-group">
                   <button
+                    className="btn accept"
                     onClick={() => handleAction(request.id, "accepted")}
                   >
                     Accept
                   </button>
                   <button
+                    className="btn reject"
                     onClick={() => handleAction(request.id, "rejected")}
                   >
                     Reject
@@ -295,41 +301,43 @@ function YourRides() {
             </div>
           ))
         ) : (
-          <p>No booking requests.</p>
+          <p className="placeholder">No booking requests.</p>
         )}
       </div>
 
-      <div className="completed-trips">
-        <h2>Completed Trips</h2>
+      {/* Completed Trips Section */}
+      <div className="section">
+        <h2 className="section-title">Completed Trips</h2>
         {completedTrips.length > 0 ? (
           completedTrips.map((trip) => (
-            console.log(trip),
-            <div key={trip.tripId} className="trip-item">
-              <p>Driver Name : {trip.driverName}</p>
-              <p>Status : {trip.status}</p>
+            <div key={trip.tripId} className="card">
+              <p><strong>Driver Name:</strong> {trip.driverName}</p>
+              <p><strong>Status:</strong> {trip.status}</p>
               {trip.status !== "rated" && (
-                 <button
-                 onClick={() => {
-                   handleRateDriver(trip.tripId);
-                   handleTripRated(trip.id); // Mark trip as rated immediately
-                 }}
-               >
+                <button
+                  className="btn rate"
+                  onClick={() => { handleRateDriver(trip.tripId) 
+                     handleTripRated(trip.id);}}
+                >
                   Rate Driver
                 </button>
               )}
             </div>
           ))
         ) : (
-          <p>No completed trips.</p>
+          <p className="placeholder">No completed trips.</p>
         )}
       </div>
 
+      {/* Trip Details Section */}
       {selectedProfile && (
-        <div className="trip-details">
-          <h2>Trip Details</h2>
-          <p>Passenger: {selectedProfile.name}</p>
-          <p>Contact: {selectedProfile.contact}</p>
-          <button onClick={handleCompleteTrip}>Complete Trip</button>
+        <div className="section trip-details">
+          <h2 className="section-title">Trip Details</h2>
+          <p><strong>Passenger:</strong> {selectedProfile.name}</p>
+          <p><strong>Contact:</strong> {selectedProfile.contact}</p>
+          <button className="btn complete" onClick={handleCompleteTrip}>
+            Complete Trip
+          </button>
         </div>
       )}
     </div>
@@ -337,3 +345,4 @@ function YourRides() {
 }
 
 export default YourRides;
+

@@ -1,0 +1,40 @@
+/* Container styles */
+.profile-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    background-color: #f8f9fa;
+    font-family: Arial, sans-serif;
+  }
+  
+  /* Card styles */
+  .profile-card {
+    background-color: #ffffff;
+    box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+    border-radius: 10px;
+    padding: 20px 30px;
+    max-width: 400px;
+    width: 90%;
+    text-align: center;
+  }
+  
+  /* Heading styles */
+  .profile-heading {
+    font-size: 24px;
+    color: #333333;
+    margin-bottom: 20px;
+    font-weight: bold;
+  }
+  
+  /* Info styles */
+  .profile-info p {
+    font-size: 16px;
+    color: #555555;
+    margin: 10px 0;
+  }
+  
+  .profile-info strong {
+    color: #000000;
+  }
+  

@@ -1,0 +1,362 @@
+import React, { useEffect, useState } from "react";
+import { db } from "../services/firebase";
+import {
+  collection,
+  query,
+  where,
+  getDocs,
+  updateDoc,
+  doc,
+} from "firebase/firestore";
+import { useAuth } from "../context/AuthContext";
+import { useLocation } from "react-router-dom"; // Import useLocation
+import ReactStars from "react-rating-stars-component";
+
+function RatingsPage() {
+  const { currentUser } = useAuth();
+  const location = useLocation(); // Access state from navigation
+  const [completedTrips, setCompletedTrips] = useState([]);
+  const [ratings, setRatings] = useState({}); // Store ratings for trips
+  const [passengerList, setPassengerList] = useState({}); // Store passenger list for each trip
+
+  // Get driverId and userId from the state passed during navigation
+  const { driverId, userId } = location.state || {};
+
+  useEffect(() => {
+    fetchCompletedTrips();
+  }, [driverId, userId]); // Re-fetch trips whenever driverId or userId changes
+
+  const fetchCompletedTrips = async () => {
+    try {
+      const allTrips = [];
+
+      // Step 1: Get trips where the currentUser is the passenger
+      const passengerQuery = query(
+        collection(db, "userRide"),
+        where("userId", "==", userId), // Use userId passed from location state
+        where("status", "==", "completed")
+      );
+
+      const passengerSnapshot = await getDocs(passengerQuery);
+      passengerSnapshot.forEach((doc) => {
+        // Fetch passenger list for the trip
+        fetchPassengerList(userId).then((passengers) => {
+          setPassengerList((prevList) => ({
+            ...prevList,
+            [userId]: passengers,
+          }));
+        });
+
+        allTrips.push({
+          id: doc.id,
+          role: "driver",
+          tripId: doc.data().tripId,
+          source: doc.data().source,
+          destination: doc.data().destination,
+          driverName: doc.data().driverName,
+          ...doc.data(),
+        });
+      });
+
+      // Step 2: Get trips where the currentUser is the driver
+      const driverQuery = query(
+        collection(db, "rides"),
+        where("driverId", "==", driverId), // Use driverId passed from location state
+        where("status", "==", "completed")
+      );
+
+      const driverSnapshot = await getDocs(driverQuery);
+      driverSnapshot.forEach((doc) => {
+        const tripData = doc.data();
+        const tripId = doc.id;
+
+        allTrips.push({
+          id: doc.id,
+          role: "passenger",
+          tripId: tripId, // Assuming document ID as trip ID
+          source: tripData.source,
+          destination: tripData.destination,
+          driverName: tripData.driverName || "You",
+          ...tripData,
+        });
+      });
+
+      setCompletedTrips(allTrips);
+    } catch (error) {
+      console.error("Error fetching completed trips:", error);
+    }
+  };
+
+  // Function to fetch passengers for a specific trip
+  const fetchPassengerList = async (userId) => {
+    try {
+      const passengers = [];
+      const passengerQuery = query(
+        collection(db, "userRide"),
+        where("userId", "==", userId)
+      );
+
+      const passengerSnapshot = await getDocs(passengerQuery);
+      passengerSnapshot.forEach((doc) => {
+        passengers.push(doc.data().userId);
+      });
+
+      return passengers;
+    } catch (error) {
+      console.error("Error fetching passenger list:", error);
+      return [];
+    }
+  };
+
+  const handleRatingChange = async (tripId, newRating, role) => {
+    setRatings((prevRatings) => ({ ...prevRatings, [tripId]: newRating }));
+
+    try {
+      if (role === "driver") {
+        // Update rating in userRide collection
+        const tripRef = doc(db, "userRide", tripId);
+        await updateDoc(tripRef, { passengerRating: newRating });
+      } else if (role === "passenger") {
+        // Update rating in rides collection
+        const tripRef = doc(db, "rides", tripId);
+        await updateDoc(tripRef, { driverRating: newRating });
+      }
+      alert("Rating submitted successfully!");
+    } catch (error) {
+      console.error("Error submitting rating:", error);
+      alert("Failed to submit rating. Please try again.");
+    }
+  };
+
+  return (
+    <div>
+      <h2>Rate Your Rides</h2>
+      {completedTrips.length === 0 ? (
+        <p>No completed trips to rate.</p>
+      ) : (
+        completedTrips.map((trip) => (
+          <div key={trip.id} style={{ marginBottom: "20px" }}>
+            <h3>Trip: {trip.tripId}</h3>
+            <p>
+              <strong>Role:</strong> {trip.role}
+            </p>
+            {trip.role === "passenger" ? (
+              <div>
+                <p>
+                  <strong>Driver:</strong> {trip.driverName || currentUser.name}
+                </p>
+                <div style={{ marginTop: "10px" }}>
+                  <ReactStars
+                    count={5}
+                    value={ratings[trip.id] || 0}
+                    onChange={(newRating) =>
+                      handleRatingChange(trip.id, newRating, "passenger")
+                    }
+                    size={30}
+                    isHalf={true}
+                    activeColor="#ffd700"
+                  />
+                </div>
+              </div>
+            ) : (
+              <div>
+                <p>
+                  <strong>Passengers:</strong>
+                </p>
+                <ul>
+                  {passengerList[trip.userId]?.map((passenger, index) => (
+                    <li key={index}>{passenger}</li>
+                  ))}
+                </ul>
+                <div style={{ marginTop: "10px" }}>
+                  <ReactStars
+                    count={5}
+                    value={ratings[trip.id] || 0}
+                    onChange={(newRating) =>
+                      handleRatingChange(trip.id, newRating, "driver")
+                    }
+                    size={30}
+                    isHalf={true}
+                    activeColor="#ffd700"
+                  />
+                </div>
+              </div>
+            )}
+          </div>
+        ))
+      )}
+    </div>
+  );
+}
+
+export default RatingsPage;
+
+.......................................................................................
+import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useRides } from '../context/RideContext';
+import MapComponent from '../components/MapComponent';
+import './SearchRide.css';
+
+function SearchRide({ googleMapsApiKey }) {
+  const [source, setSource] = useState('Kichha, Uttarakhand, India');
+  const [destination, setDestination] = useState('Delhi, India');
+  const [sourceLat, setSourceLat] = useState(28.9115087);
+  const [sourceLng, setSourceLng] = useState(79.5153705);
+  const [destinationLat, setDestinationLat] = useState(28.7040592);
+  const [destinationLng, setDestinationLng] = useState(77.10249019999999);
+  const [date, setDate] = useState('');
+  const [seats, setSeats] = useState(1);
+  const { rides, fetchRides } = useRides();
+  const navigate = useNavigate();
+
+  useEffect(() => {
+    fetchRides();
+  }, [fetchRides]);
+
+  useEffect(() => {
+    const loadScript = (src) => {
+      return new Promise((resolve) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.async = true;
+        script.onload = () => resolve(); 
+
+        document.body.appendChild(script);
+      });
+    };
+
+    loadScript(`https://maps.gomaps.pro/maps/api/js?key=${googleMapsApiKey}&libraries=places`)
+      .then(() => {
+        const autocompleteSource = new window.google.maps.places.Autocomplete(
+          document.getElementById('autocomplete-source'),
+          { types: ['(cities)'], componentRestrictions: { country: 'IN' } }
+        );
+
+        const autocompleteDestination = new window.google.maps.places.Autocomplete(
+          document.getElementById('autocomplete-destination'),
+          { types: ['(cities)'], componentRestrictions: { country: 'IN' } }
+        );
+
+        autocompleteSource.addListener('place_changed', () => {
+          const place = autocompleteSource.getPlace();
+          
+          setSource(place.formatted_address);
+          setSourceLat(place.geometry.location.lat());
+          setSourceLng(place.geometry.location.lng());
+        });
+
+        autocompleteDestination.addListener('place_changed', () => {
+          const place = autocompleteDestination.getPlace();
+          setDestination(place.formatted_address);   
+
+          setDestinationLat(place.geometry.location.lat());
+          setDestinationLng(place.geometry.location.lng());
+        });
+      });
+  }, [googleMapsApiKey]);
+
+  const handleSearch = async () => {
+   
+
+    const calculateDistance = (lat1, lon1, lat2, lon2) => {
+      const R = 6371e3; // meters (Earth's radius)
+      const φ1 = toRadians(lat1);
+      const φ2 = toRadians(lat2);
+      const Δφ = φ2 - φ1;
+      const λ1 = toRadians(lon1);
+      const λ2 = toRadians(lon2);
+      const Δλ = λ2 - λ1;
+
+      const a = Math.sin(Δφ / 2) * Math.sin(Δφ / 2) +
+            Math.cos(φ1) * Math.cos(φ2) *
+            Math.sin(Δλ / 2) * Math.sin(Δλ / 2);
+      const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+
+      return Math.round(R * c); // Distance in meters, round to nearest meter
+    };
+
+    const toRadians = (degrees) => degrees * Math.PI / 180;
+
+  
+    const nearbyRides = [];
+    const thresholdDistance = 50000; // 50 km in meters (adjust as needed)
+
+    for (const ride of rides) {
+      const distanceToRideSource = calculateDistance(
+        sourceLat, sourceLng, ride.sourceLat, ride.sourceLng
+      );
+      const distanceToRideDest = calculateDistance(
+        destinationLat, destinationLng, ride.destinationLat, ride.destinationLng
+      );
+
+      if (distanceToRideSource <= thresholdDistance || distanceToRideDest <= thresholdDistance) {
+        nearbyRides.push(ride);
+      }
+    }
+
+    if (nearbyRides.length > 0) {
+      navigate('/available-rides', { state: { results: nearbyRides,sourceLat,sourceLng,destinationLat,destinationLng } });
+    } else {
+      alert('No rides found matching your search criteria and nearby locations.');
+    }
+    
+  <MapComponent
+  googleMapsApiKey={googleMapsApiKey}
+  sourceLat={sourceLat}
+  sourceLng={sourceLng}
+  destinationLat={destinationLat}
+  destinationLng={destinationLng}
+/>
+
+  };
+
+  return (
+    <div className="search-ride-container">
+      {/* Logo Section */}
+      <div className="logo-container">
+        <img src="/BlaBlaCar_logo.png" alt="Logo" className="blabla-logo" />
+        <h1 className="heading">Search for a Ride</h1>
+      </div>
+
+      {/* Form Section */}
+      <div className="s-form-container">
+        <input
+          id="autocomplete-source"
+          type="text"
+          placeholder="Enter source"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          className="s-input"
+        />
+        <input
+          id="autocomplete-destination"
+          type="text"
+          placeholder="Enter destination"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          className="s-input"
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="s-input"
+        />
+        <input
+          type="number"
+          placeholder="Seats"
+          value={seats}
+          onChange={(e) => setSeats(e.target.value)}
+          min="1"
+          className="s-input"
+        />
+        <button onClick={handleSearch} className="search-btn">
+          Search Ride
+        </button>
+      </div>
+    </div>
+  );
+}
+
+export default SearchRide;

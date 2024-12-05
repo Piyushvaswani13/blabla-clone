@@ -109,49 +109,62 @@ function PublishRide({ googleMapsApiKey }) {
   };
 
   return (
-    <div>
-      <h2>Publish a Ride</h2>
-      <input
-        id="autocomplete-source"
-        type="text"
-        placeholder="Enter Source"
-        style={{ width: "100%", height: "40px", margin: "10px 0" }}
-      />
-      <input
-        id="autocomplete-destination"
-        type="text"
-        placeholder="Enter Destination"
-        style={{ width: "100%", height: "40px", margin: "10px 0" }}
-      />
-      <input
-        type="text"
-        placeholder="Car Model"
-        value={carModel}
-        onChange={(e) => setCarModel(e.target.value)}
-      />
-      <input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
-      <input
-        type="number"
-        placeholder="Number of Seats"
-        value={seats}
-        onChange={(e) => setSeats(e.target.value)}
-      />
-      <input
-        type="number"
-        placeholder="Price per Seat (₹)"
-        value={price}
-        onChange={(e) => setPrice(e.target.value)}
-      />
-      <select
-        value={approvalType}
-        onChange={(e) => setApprovalType(e.target.value)}
-      >
-        <option value="instant">Instant Approval</option>
-        <option value="requestcycle">Request Cycle</option>
-      </select>
-      <button onClick={handlePublish}>Publish Ride</button>
+    <div className="publish-ride-container">
+      <img src="/BlaBlaCar_logo.png" alt="Banner" className="banner-img" />
+      <div className="form-container">
+        <h2>Publish a Ride</h2>
+        <input
+          id="autocomplete-source"
+          type="text"
+          placeholder="Enter Source"
+          className="input-field"
+        />
+        <input
+          id="autocomplete-destination"
+          type="text"
+          placeholder="Enter Destination"
+          className="input-field"
+        />
+        <input
+          type="text"
+          placeholder="Car Model"
+          value={carModel}
+          onChange={(e) => setCarModel(e.target.value)}
+          className="input-field"
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="input-field"
+        />
+        <input
+          type="number"
+          placeholder="Number of Seats"
+          value={seats}
+          onChange={(e) => setSeats(e.target.value)}
+          className="input-field"
+        />
+        <input
+          type="number"
+          placeholder="Price per Seat (₹)"
+          value={price}
+          onChange={(e) => setPrice(e.target.value)}
+          className="input-field"
+        />
+        <select
+          value={approvalType}
+          onChange={(e) => setApprovalType(e.target.value)}
+          className="select-field"
+        >
+          <option value="instant">Instant Approval</option>
+          <option value="requestcycle">Request Cycle</option>
+        </select>
+        <button onClick={handlePublish} className="publish-btn">
+          Publish Ride
+        </button>
+      </div>
     </div>
   );
 }
-
 export default PublishRide;

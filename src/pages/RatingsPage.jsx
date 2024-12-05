@@ -11,13 +11,14 @@ import {
 import { useAuth } from "../context/AuthContext";
 import { useLocation } from "react-router-dom"; // Import useLocation
 import ReactStars from "react-rating-stars-component";
-
+import './RatingsPage.css';
 function RatingsPage() {
   const { currentUser } = useAuth();
   const location = useLocation(); // Access state from navigation
   const [completedTrips, setCompletedTrips] = useState([]);
   const [ratings, setRatings] = useState({}); // Store ratings for trips
   const [passengerList, setPassengerList] = useState({}); // Store passenger list for each trip
+  const [loading, setLoading] = useState(true);
 
   // Get driverId and userId from the state passed during navigation
   const { driverId, userId } = location.state || {};
@@ -27,6 +28,7 @@ function RatingsPage() {
   }, [driverId, userId]); // Re-fetch trips whenever driverId or userId changes
 
   const fetchCompletedTrips = async () => {
+    setLoading(true); 
     try {
       const allTrips = [];
 
@@ -87,6 +89,8 @@ function RatingsPage() {
       setCompletedTrips(allTrips);
     } catch (error) {
       console.error("Error fetching completed trips:", error);
+    }finally {
+      setLoading(false); // Data is loaded, stop loading
     }
   };
 
@@ -133,42 +137,40 @@ function RatingsPage() {
     }
   };
 
+
   return (
-    <div>
-      <h2>Rate Your Rides</h2>
-      {completedTrips.length === 0 ? (
-        <p>No completed trips to rate.</p>
+    <div className="ratings-page">
+      <h2 className="page-title">Rate Your Rides</h2>
+      {loading ? (
+        <div className="loading">Loading trips...</div>
+      ) : completedTrips.length === 0 ? (
+        <p className="no-trips-message">No completed trips to rate.</p>
       ) : (
         completedTrips.map((trip) => (
-          console.log(trip),
-          <div key={trip.id} style={{ marginBottom: "20px" }}>
-            <h3>Trip: {trip.tripId}</h3>
-            <p>
+          <div key={trip.id} className="trip-card">
+            <h3 className="trip-title">Trip Id: {trip.tripId}</h3>
+            <p className="trip-detail">
               <strong>Role:</strong> {trip.role}
             </p>
             {trip.role === "passenger" ? (
-              <p>
+              <p className="trip-detail">
                 <strong>Driver:</strong> {trip.driverName || currentUser.name}
               </p>
             ) : (
-              <div>
+              <div className="passenger-list">
                 <p>
                   <strong>Passengers:</strong>
                 </p>
                 <ul>
                   {passengerList[trip.userId]?.map((passenger, index) => (
-                    <li key={index}>{passenger}</li>
+                    <li key={index} className="passenger-item">
+                      {passenger}
+                    </li>
                   ))}
                 </ul>
               </div>
             )}
-            {/* <p>
-              <strong>Source:</strong> {trip.source}
-            </p>
-            <p>
-              <strong>Destination:</strong> {trip.destination}
-            </p> */}
-            <div style={{ marginTop: "10px" }}>
+            <div className="rating-section">
               <ReactStars
                 count={5}
                 value={ratings[trip.id] || 0}

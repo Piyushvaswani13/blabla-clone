@@ -1,4 +1,3 @@
-// src/pages/Login.jsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { auth } from '../services/firebase';
@@ -21,32 +20,18 @@ function Login() {
       alert("Login Failed!");
     }
   };
-//cookie 
-// const uid = "I4WCueo15pa3g6dCBQooQRhzwii1";
-// document.cookie = `uid=${uid}; path=/; max-age=${7 * 24 * 60 * 60}; SameSite=Strict; Secure`;
-
-// // Read the cookie
-//  function getCookie(name) {
-//   const cookies = document.cookie.split('; ');
-//   for (let cookie of cookies) {
-//     const [key, value] = cookie.split('=');
-//     if (key === name) return value;
-//   }
-//   return null;
-// }
-
-// console.log("Stored UID:", getCookie('uid'));
-
 
   return (
-    <div>
+    <div className="login-container">
+      <img src="/BlaBlaCar.png" alt="Logo" className="logo" />
       <h2>Log In</h2>
       <form onSubmit={handleLogin}>
         <input type="email" placeholder="Email" value={email} onChange={(e) => setEmail(e.target.value)} required />
         <input type="password" placeholder="Password" value={password} onChange={(e) => setPassword(e.target.value)} required />
-        <button type="submit">Log In</button>
+        <button type="submit" className="login-btn">Log In</button>
       </form>
     </div>
   );
 }
+
 export default Login;

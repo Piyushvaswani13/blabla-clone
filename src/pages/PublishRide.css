@@ -1,28 +1,70 @@
-/* src/pages/PublishRide.css */
+.publish-ride-container {
+  text-align: center;
+  margin: 0 auto;
+  max-width: 1200px;
+  padding: 20px;
+}
+
+.banner-img {
+  width: 40%;
+  height: 100px;
+  object-fit: contain;
+  margin-bottom: 5px;
+}
+
+.form-container {
+  /* display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center; */
+  max-width: 600px;
+  margin: 0 auto;
+  background-color: #ffffff;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+  border:#333;
+}
+
 h2 {
-    margin-bottom: 20px;
-  }
+  font-size: 24px;
+  font-weight: lighter;
+  margin-bottom: 20px;
+}
+
+.input-field, .select-field {
+  width: 100%;
+  padding: 10px;
+  margin: 10px 0;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+}
+
+.input-field:focus, .select-field:focus {
+  outline: none;
+  border-color: green;
   
-  input {
-    width: 100%;
-    height: 40px;
-    margin: 10px 0;
-    padding: 5px;
-    border: 1px solid #ccc;
-    border-radius: 4px;
+}
+
+.publish-btn {
+  background-color: #007bff;
+  color: white;
+  padding: 12px;
+  border: none;
+  border-radius: 25px;
+  cursor: pointer;
+  font-size: 16px;
+  width: 50%;
+  margin-top: 10px;
+}
+
+button:hover {
+  background-color: #0056b3;
+}
+
+@media (max-width: 768px) {
+  .form-container {
+    width: 90%;
+    padding: 15px;
   }
-  
-  button {
-    width: 100%;
-    height: 40px;
-    background-color: #28a745;
-    color: white;
-    border: none;
-    border-radius: 4px;
-    cursor: pointer;
-  }
-  
-  button:hover {
-    background-color: #218838;
-  }
-  
+}

@@ -1,26 +1,28 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useRides } from "../context/RideContext";
+import { useAuth } from "../context/AuthContext";
 import "./RideCard.css";
 import Map from "../pages/Map";
 
 // Helper function to get a cookie value
-const getCookie = (name) => {
-  const cookieArr = document.cookie.split(";");
-  for (let cookie of cookieArr) {
-    const [key, value] = cookie.trim().split("=");
-    if (key === name) {
-      return decodeURIComponent(value);
-    }
-  }
-  return null;
-};
+// const getCookie = (name) => {
+//   const cookieArr = document.cookie.split(";");
+//   for (let cookie of cookieArr) {
+//     const [key, value] = cookie.trim().split("=");
+//     if (key === name) {
+//       return decodeURIComponent(value);
+//     }
+//   }
+//   return null;
+// };
 
 function RideCard({ ride, googleMapsApiKey }) {
   const [showDetails, setShowDetails] = useState(false);
   const navigate = useNavigate();
   const { sendNotification, addRideRequest } = useRides();
-  const uid = getCookie("uid"); // Get UID from cookies
+  const {currentUser} = useAuth();
+  const uid = currentUser.uid;
 
 
 

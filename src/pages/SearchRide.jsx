@@ -2,14 +2,15 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useRides } from '../context/RideContext';
 import MapComponent from '../components/MapComponent';
+import './SearchRide.css';
 
 function SearchRide({ googleMapsApiKey }) {
-  const [source, setSource] = useState('Kichha, Uttarakhand, India');
-  const [destination, setDestination] = useState('Delhi, India');
-  const [sourceLat, setSourceLat] = useState(28.9115087);
-  const [sourceLng, setSourceLng] = useState(79.5153705);
-  const [destinationLat, setDestinationLat] = useState(28.7040592);
-  const [destinationLng, setDestinationLng] = useState(77.10249019999999);
+  const [source, setSource] = useState();
+  const [destination, setDestination] = useState();
+  const [sourceLat, setSourceLat] = useState();
+  const [sourceLng, setSourceLng] = useState();
+  const [destinationLat, setDestinationLat] = useState();
+  const [destinationLng, setDestinationLng] = useState();
   const [date, setDate] = useState('');
   const [seats, setSeats] = useState(1);
   const { rides, fetchRides } = useRides();
@@ -116,39 +117,50 @@ function SearchRide({ googleMapsApiKey }) {
 
   };
 
-
   return (
-    <div>
-      <h2>Search for a Ride</h2>
-      <input
-        id="autocomplete-source"
-        type="text"
-        placeholder="Enter source"
-        value={source}
-        onChange={(e) => setSource(e.target.value)}
-        style={{ width: '100%', height: '40px', margin: '10px 0' }}
-      />
-      <input
-        id="autocomplete-destination"
-        type="text"
-        placeholder="Enter destination"
-        value={destination}
-        onChange={(e) => setDestination(e.target.value)}
-        style={{ width: '100%', height: '40px', margin: '10px 0' }}
-      />
-      <input
-        type="date"
-        value={date}
-        onChange={(e) => setDate(e.target.value)}
-      />
-      <input
-        type="number"
-        placeholder="Seats"
-        value={seats}
-        onChange={(e) => setSeats(e.target.value)}
-        min="1"
-      />
-      <button onClick={handleSearch}>Search Ride</button>
+    <div className="search-ride-container">
+      {/* Logo Section */}
+      <div className="logo-container">
+        <img src="/BlaBlaCar_logo.png" alt="Logo" className="blabla-logo" />
+        <h1 className="heading">Search for a Ride</h1>
+      </div>
+
+      {/* Form Section */}
+      <div className="s-form-container">
+        <input
+          id="autocomplete-source"
+          type="text"
+          placeholder="Enter source"
+          value={source}
+          onChange={(e) => setSource(e.target.value)}
+          className="s-input"
+        />
+        <input
+          id="autocomplete-destination"
+          type="text"
+          placeholder="Enter destination"
+          value={destination}
+          onChange={(e) => setDestination(e.target.value)}
+          className="s-input"
+        />
+        <input
+          type="date"
+          value={date}
+          onChange={(e) => setDate(e.target.value)}
+          className="s-input"
+        />
+        <input
+          type="number"
+          placeholder="Seats"
+          value={seats}
+          onChange={(e) => setSeats(e.target.value)}
+          min="1"
+          className="s-input"
+        />
+        <button onClick={handleSearch} className="search-btn">
+          Search Ride
+        </button>
+      </div>
     </div>
   );
 }

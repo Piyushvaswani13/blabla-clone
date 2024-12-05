@@ -3,13 +3,15 @@ import { useLocation, useNavigate } from "react-router-dom";
 import ReactStars from "react-rating-stars-component";
 import { db } from "../services/firebase";
 import { updateDoc, doc, getDoc } from "firebase/firestore";
+import "./RateDriver.css"; // Assuming you will add styles in a separate CSS file
 
 function RateDriver() {
   const { state } = useLocation();
   const navigate = useNavigate();
-  const { tripId, passengerId } = state || {}; // Make sure state is being passed correctly
+  const { tripId, passengerId } = state || {}; // Ensure state is being passed correctly
   const [rating, setRating] = useState(0); // State to store the rating
-  const [driverName, setDriverName] = useState(""); // State to store driver's name
+  const [driverName, setDriverName] = useState(""); // State to store the driver's name
+  const [loading, setLoading] = useState(true); // Loading state
 
   // Fetch the driver's name when the component mounts
   useEffect(() => {
@@ -25,13 +27,14 @@ function RateDriver() {
 
         if (tripSnap.exists()) {
           const tripData = tripSnap.data();
-          console.log("Fetched trip data:", tripData); // Debugging the fetched trip data
           setDriverName(tripData.driverName || "Driver name not available"); // Store the driver's name in state
         } else {
           console.error("No such trip!");
         }
       } catch (error) {
         console.error("Error fetching driver name:", error);
+      } finally {
+        setLoading(false); // Stop loading after data is fetched
       }
     };
 
@@ -57,26 +60,40 @@ function RateDriver() {
     }
   };
 
-  if (!tripId || !driverName) {
-    return <div>Loading...</div>;
+  if (loading) {
+    return (
+      <div className="loading-container">
+        <div className="spinner"></div> {/* Add a loading spinner */}
+        <p>Loading driver details...</p>
+      </div>
+    );
   }
 
   return (
-    <div>
-      <h2>Rate Your Driver</h2>
-      <div>
-        <p>
+    <div className="rate-driver-container">
+      <h2 className="rate-driver-title">Rate Your Driver</h2>
+      <div className="rate-driver-card">
+        <p className="driver-name">
           <strong>Driver:</strong> {driverName}
         </p>
-        <p>Rate the driver for trip {tripId}</p>
-        <ReactStars
-          count={5}
-          value={rating} // Set the value to the rating state
-          onChange={handleRatingChange} // Use the handleRatingChange to update the rating
-          size={30}
-          isHalf={true}
-          activeColor="#ffd700"
-        />
+        <p className="trip-info">Rate the driver for trip {tripId}</p>
+
+        <div className="rating-container">
+          <ReactStars
+            count={5}
+            value={rating} // Set the value to the rating state
+            onChange={handleRatingChange} // Use the handleRatingChange to update the rating
+            size={30}
+            isHalf={true}
+            activeColor="#ffd700"
+          />
+        </div>
+
+        <div className="submit-rating">
+          <button className="submit-button" onClick={() => handleRatingChange(rating)}>
+            Submit Rating
+          </button>
+        </div>
       </div>
     </div>
   );

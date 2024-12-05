@@ -36,37 +36,41 @@ function Signup() {
   };
 
   return (
-    <form onSubmit={handleSignup}>
-      <input 
-        type="text" 
-        value={name} 
-        onChange={(e) => setUsername(e.target.value)} 
-        placeholder="Username" 
-        required 
-      />
-      <input 
-        type="text" 
-        value={contact} 
-        onChange={(e) => setContact(e.target.value)} 
-        placeholder="Contact Number" 
-        required 
-      />
-      <input 
-        type="email" 
-        value={email} 
-        onChange={(e) => setEmail(e.target.value)} 
-        placeholder="Email" 
-        required 
-      />
-      <input 
-        type="password" 
-        value={password} 
-        onChange={(e) => setPassword(e.target.value)} 
-        placeholder="Password" 
-        required 
-      />
-      <button type="submit">Sign Up</button>
-    </form>
+    <div className="signup-container">
+      <img src="/BlaBlaCar.png" alt="Logo" className="logo" />
+      <h2>Create an Account</h2>
+      <form onSubmit={handleSignup}>
+        <input 
+          type="text" 
+          value={name} 
+          onChange={(e) => setUsername(e.target.value)} 
+          placeholder="Username" 
+          required 
+        />
+        <input 
+          type="text" 
+          value={contact} 
+          onChange={(e) => setContact(e.target.value)} 
+          placeholder="Contact Number" 
+          required 
+        />
+        <input 
+          type="email" 
+          value={email} 
+          onChange={(e) => setEmail(e.target.value)} 
+          placeholder="Email" 
+          required 
+        />
+        <input 
+          type="password" 
+          value={password} 
+          onChange={(e) => setPassword(e.target.value)} 
+          placeholder="Password" 
+          required 
+        />
+        <button type="submit" className="signup-btn">Sign Up</button>
+      </form>
+    </div>
   );
 }
 

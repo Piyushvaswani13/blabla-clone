@@ -1,30 +1,42 @@
-/* src/pages/Dashboard.css */
 .dashboard-container {
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-    align-items: center;
-    height: 100vh; /* Full height of the viewport */
-    background-color: #f0f0f0; /* Light background color */
-    text-align: center; /* Center text */
-  }
-  
-  .button-container {
-    margin-top: 20px; /* Spacing above the button container */
-  }
-  
-  .button {
-    display: inline-block; /* Make the link look like a button */
-    padding: 10px 20px; /* Padding for the button */
-    margin: 10px; /* Margin between buttons */
-    background-color: #007bff; /* Bootstrap primary color */
-    color: white; /* Button text color */
-    text-decoration: none; /* Remove underline */
-    border-radius: 5px; /* Rounded corners */
-    transition: background-color 0.3s; /* Smooth background color transition */
-  }
-  
-  .button:hover {
-    background-color: #0056b3; /* Darker shade on hover */
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 100vh;
+  background-color: #f7f7f7;
+  text-align: center;
+}
+
+.logo {
+  width: 150px;
+  margin-bottom: 20px;
+}
+
+h1 {
+  font-size: 2rem;
+  color: #333;
+  margin-bottom: 30px;
+}
+
+.button-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.button {
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  padding: 12px 30px;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  width: 200px;
+  text-align: center;
+  transition: background-color 0.3s;
+}
+
+.button:hover {
+  background-color: #0056b3;
+}

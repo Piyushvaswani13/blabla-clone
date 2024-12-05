@@ -1,50 +1,56 @@
 .ratings-page {
-    padding: 20px;
-    max-width: 600px;
-    margin: auto;
-  }
-  
-  .title {
-    text-align: center;
-    font-weight: bold;
-    margin-bottom: 20px;
-  }
-  
-  .no-trips {
-    text-align: center;
-    color: #666;
-  }
-  
-  .trips-container {
-    display: flex;
-    flex-direction: column;
-    gap: 15px;
-  }
-  
-  .trip-card {
-    padding: 15px;
-    border: 1px solid #ddd;
-    border-radius: 5px;
-    background-color: #f9f9f9;
-  }
-  
-  .rating-container {
-    margin-top: 10px;
-  }
-  
-  .submit-btn {
-    display: block;
-    margin: 20px auto;
-    background-color: green;
-    color: white;
-    padding: 10px 15px;
-    border: none;
-    border-radius: 5px;
-    cursor: pointer;
-    font-size: 16px;
-  }
-  
-  .submit-btn:hover {
-    background-color: darkgreen;
-  }
-  
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 20px;
+  background-color: #f9f9f9;
+}
+
+.page-title {
+  text-align: center;
+  font-size: 1.8rem;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.loading,
+.no-trips-message {
+  text-align: center;
+  color: #666;
+  font-size: 1.2rem;
+}
+
+.trip-card {
+  background: #fff;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  margin-bottom: 20px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.trip-title {
+  font-size: 1.4rem;
+  margin-bottom: 10px;
+  color: #444;
+}
+
+.trip-detail {
+  font-size: 1rem;
+  margin: 5px 0;
+  color: #555;
+}
+
+.passenger-list ul {
+  list-style-type: none;
+  padding: 0;
+}
+
+.passenger-item {
+  font-size: 0.9rem;
+  color: #555;
+}
+
+.rating-section {
+  margin-top: 15px;
+  text-align: center;
+}

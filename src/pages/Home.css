@@ -1,15 +1,71 @@
-/* src/pages/Home.css */
+/* General styles for the Home page */
 .home-container {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    align-items: center;
-    padding: 20px;
-  }
-  
-  .home-link {
-    text-decoration: none;
-    color: blue;
-    font-size: 18px;
-  }
-  
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: 10px;
+  background-color: #f4f4f9;
+  min-height: 100vh;
+}
+
+
+.logos {
+  width: 150px; /* Adjust based on your logo size */
+  height: auto;
+  object-fit: contain;
+}
+
+/* Header text section with background image */
+.header-text {
+  width: 100%;
+  background-image: url('/public/banner.png');
+  background-size: cover;
+  background-position: center;
+ 
+  padding: 0px 20px 200px 25px;
+  color: white;
+}
+
+.para{
+
+    font-size: 1.2rem;
+    color: grey;
+    margin-bottom: 5px;
+
+}
+
+h1 {
+  font-size: 2.5rem;
+  font-weight: 600;
+  margin-bottom: 50px;
+}
+
+
+
+/* Styles for the link buttons */
+.link-container {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+  margin-top: 30px;
+}
+
+.home-link {
+  display: inline-block;
+  padding: 12px 25px;
+  background-color: #007bff;
+  color: white;
+  text-decoration: none;
+  border-radius: 25px;
+  font-size: 1.1rem;
+  transition: background-color 0.3s ease;
+}
+
+.home-link:hover {
+  background-color: #0056b3;
+}
+
+.home-link:active {
+  background-color: #003d75;
+}
