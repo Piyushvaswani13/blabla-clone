@@ -18,7 +18,7 @@ function PublishRide({ googleMapsApiKey }) {
   const [price, setPrice] = useState("");
   const [driverName, setDriverName] = useState("");
   const [driverContact, setDriverContact] = useState("");
-  const [approvalType, setApprovalType] = useState("instant");
+  const [approvalType, setApprovalType] = useState("");
   const { publishRide } = useRides();
   const navigate = useNavigate();
 
@@ -86,6 +86,16 @@ function PublishRide({ googleMapsApiKey }) {
       return;
     }
 
+    if (seats <= 0) {
+      alert("Number of seats must be greater than zero!");
+      return;
+    }
+
+    if (seats > 10) {
+      alert("Number of seats cannot exceed 10!");
+      return;
+    }
+
     const rideDetails = {
       sourceLat,
       sourceLng,
@@ -134,6 +144,7 @@ function PublishRide({ googleMapsApiKey }) {
         />
         <input
           type="date"
+          placeholder="Trip Date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           className="input-field"
@@ -152,11 +163,14 @@ function PublishRide({ googleMapsApiKey }) {
           onChange={(e) => setPrice(e.target.value)}
           className="input-field"
         />
+        
         <select
+          id="trip-type"
           value={approvalType}
           onChange={(e) => setApprovalType(e.target.value)}
           className="select-field"
         >
+           <option value="" disabled>Trip Type</option>
           <option value="instant">Instant Approval</option>
           <option value="requestcycle">Request Cycle</option>
         </select>

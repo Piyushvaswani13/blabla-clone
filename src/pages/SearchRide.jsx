@@ -96,7 +96,7 @@ function SearchRide({ googleMapsApiKey }) {
         destinationLat, destinationLng, ride.destinationLat, ride.destinationLng
       );
 
-      if (distanceToRideSource <= thresholdDistance || distanceToRideDest <= thresholdDistance) {
+      if (distanceToRideSource <= thresholdDistance && distanceToRideDest <= thresholdDistance) {
         nearbyRides.push(ride);
       }
     }
@@ -145,6 +145,7 @@ function SearchRide({ googleMapsApiKey }) {
         />
         <input
           type="date"
+          placeholder="Trip Date"
           value={date}
           onChange={(e) => setDate(e.target.value)}
           className="s-input"

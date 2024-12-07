@@ -1,10 +1,9 @@
 .signup-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  height: 100vh;
-  background-color: #f7f7f7;
+  max-width: 400px;
+  margin: 0 auto;
+  padding: 20px;
+  text-align: center;
+  font-family: Arial, sans-serif;
 }
 
 .logo {
@@ -13,40 +12,69 @@
 }
 
 h2 {
-  font-size: 1.8rem;
+  font-size: 24px;
   margin-bottom: 20px;
-  color: #333;
+  font-weight: lighter; /* Lighter font as per preference */
 }
 
 form {
-  width: 100%;
-  max-width: 400px;
-  background-color: white;
-  padding: 30px;
-  border-radius: 10px;
-  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  display: flex;
+  flex-direction: column;
 }
 
 input {
-  width: 100%;
-  padding: 12px;
-  margin-bottom: 15px;
+  margin: 10px 0;
+  padding: 10px;
+  font-size: 16px;
   border: 1px solid #ccc;
-  border-radius: 15px;
-  font-size: 1rem;
+  border-radius: 5px;
+}
+
+nput:invalid {
+  border: 1px solid red;
+}
+
+.password-container {
+  position: relative;
+  width: 100%;
+}
+
+.password-container input {
+  width: 100%;
+  padding-right: 10px;
+}
+
+.toggle-password {
+  position: absolute;
+  top: 50%;
+  right: 5px;
+  transform: translateY(-50%);
+  cursor: pointer;
+  font-size: 18px;
+  user-select: none;
 }
 
 .signup-btn {
-  width: 100%;
-  padding: 12px;
-  background-color: #007bff;
+  width: 60%;
+  align-self: center;
+  background-color:  #007bff; /* Green button */
   color: white;
+  padding: 10px;
+  font-size: 16px;
   border: none;
   border-radius: 25px;
-  font-size: 1.1rem;
   cursor: pointer;
+  margin-top: 10px;
 }
 
-button:hover {
-  background-color: #0056b3;
+.signup-btn:hover {
+  background-color: #0056b3; /* Slightly darker green */
+}
+
+.signup-container img {
+  margin-bottom: 10px;
+}
+
+.signup-container input::placeholder {
+  color: #888;
 }

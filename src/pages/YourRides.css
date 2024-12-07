@@ -81,3 +81,18 @@
   color: #888;
   font-size: 0.9rem;
 }
+
+.btn.cancel {
+  background-color: #ff4d4d; /* Red color for cancel */
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  margin-left: 10px;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 14px;
+}
+
+.btn.cancel:hover {
+  background-color: #e63939; /* Darker red on hover */
+}

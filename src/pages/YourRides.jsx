@@ -17,7 +17,8 @@ function YourRides() {
   const { currentUser } = useAuth();
   const [userRole, setUserRole] = useState(null);
   const [bookingRequests, setBookingRequests] = useState([]);
-  const [completedTrips, setCompletedTrips] = useState([]);  // New state for completed trips
+  const [completedTrips, setCompletedTrips] = useState([]); 
+  const [canceledTrips, setCanceledTrips] = useState([]);
   const [selectedProfile, setSelectedProfile] = useState(null);
   const navigate = useNavigate();
 
@@ -30,7 +31,8 @@ function YourRides() {
   useEffect(() => {
     if (userRole) {
       fetchBookingRequests();
-      fetchCompletedTrips();  // Fetch completed trips when userRole changes
+      fetchCompletedTrips();  
+      fetchCanceledTrips();
     }
   }, [userRole]);
 
@@ -54,6 +56,7 @@ function YourRides() {
       if (!currentUser?.uid || !userRole) return;
 
       const requests = [];
+     
       if (userRole === "driver") {
         const driverRidesQuery = query(
           collection(db, "rides"),
@@ -64,7 +67,8 @@ function YourRides() {
         for (const ride of ridesSnapshot.docs) {
           const userRideQuery = query(
             collection(db, "userRide"),
-            where("tripId", "==", ride.id)
+            where("tripId", "==", ride.id),
+            where("status", "in", ["pending", "accepted"]) 
           );
           const userRideSnapshot = await getDocs(userRideQuery);
 
@@ -242,6 +246,64 @@ function YourRides() {
     }
   };
 
+  const fetchCanceledTrips = async () => {
+    try {
+      if (!currentUser?.uid || !userRole) return;
+  
+      const canceledTrips = [];
+  
+      // Fetch all rides for the current user
+      const ridesSnapshot = await getDocs(
+        query(
+          collection(db, "rides"),
+          userRole === "driver"
+            ? where("driverId", "==", currentUser.uid)
+            : where("userId", "==", currentUser.uid)
+        )
+      );
+  
+      // Loop through rides to fetch associated canceled userRide documents
+      for (const ride of ridesSnapshot.docs) {
+        const userRideQuery = query(
+          collection(db, "userRide"),
+          where("tripId", "==", ride.id), // Match tripId
+          where("status", "==", "canceled") // Only canceled trips
+        );
+  
+        const userRideSnapshot = await getDocs(userRideQuery);
+        userRideSnapshot.forEach((doc) => {
+          canceledTrips.push({
+            ...doc.data(),
+            id: doc.id,
+          });
+        });
+      }
+  
+      setCanceledTrips(canceledTrips); // Update state
+    } catch (error) {
+      console.error("Error fetching canceled trips:", error);
+    }
+  };
+  
+  
+
+  const handleCancelTrip = async () => {
+    try {
+      if (selectedProfile?.id) {
+        await updateDoc(doc(db, "userRide", selectedProfile.id), {
+          status: "canceled",
+        });
+        setSelectedProfile(null); // Clear the selected trip details
+        alert("Trip has been canceled.");
+        fetchBookingRequests();
+        fetchCanceledTrips(); // Refresh canceled trips list
+      }
+    } catch (error) {
+      console.error("Error canceling trip:", error);
+    }
+  };
+
+
   const handleRateDriver = async (tripId) => {
     try {
       navigate("/rate-driver", {
@@ -329,15 +391,37 @@ function YourRides() {
         )}
       </div>
 
+         {/* Canceled Trips Section */}
+      <div className="section">
+        <h2 className="section-title">Canceled Trips</h2>
+        {canceledTrips.length > 0 ? (
+          canceledTrips.map((trip) => (
+            console.log(trip),
+            <div key={trip.tripId} className="card">
+              <p><strong>Passenger id:</strong> {trip.userId || "N/A"}</p>
+              <p><strong>Status:</strong> {trip.status}</p>
+            </div>
+          ))
+        ) : (
+          <p className="placeholder">No canceled trips.</p>
+        )}
+      </div>
+
+
       {/* Trip Details Section */}
       {selectedProfile && (
         <div className="section trip-details">
           <h2 className="section-title">Trip Details</h2>
           <p><strong>Passenger:</strong> {selectedProfile.name}</p>
           <p><strong>Contact:</strong> {selectedProfile.contact}</p>
-          <button className="btn complete" onClick={handleCompleteTrip}>
-            Complete Trip
-          </button>
+          <div className="button-group">
+      <button className="btn complete" onClick={handleCompleteTrip}>
+        Complete Trip
+      </button>
+      <button className="btn cancel" onClick={handleCancelTrip}>
+        Cancel Trip
+      </button>
+    </div>
         </div>
       )}
     </div>
