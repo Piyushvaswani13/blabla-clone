@@ -252,26 +252,39 @@ function YourRides() {
   
       const canceledTrips = [];
   
-      // Fetch all rides for the current user
-      const ridesSnapshot = await getDocs(
-        query(
+      if (userRole === "driver") {
+        const driverQuery = query(
           collection(db, "rides"),
-          userRole === "driver"
-            ? where("driverId", "==", currentUser.uid)
-            : where("userId", "==", currentUser.uid)
-        )
-      );
-  
-      // Loop through rides to fetch associated canceled userRide documents
-      for (const ride of ridesSnapshot.docs) {
-        const userRideQuery = query(
-          collection(db, "userRide"),
-          where("tripId", "==", ride.id), // Match tripId
-          where("status", "==", "canceled") // Only canceled trips
+          where("driverId", "==", currentUser.uid)
         );
+        const ridesSnapshot = await getDocs(driverQuery);
   
-        const userRideSnapshot = await getDocs(userRideQuery);
-        userRideSnapshot.forEach((doc) => {
+        for (const ride of ridesSnapshot.docs) {
+          const userRideQuery = query(
+            collection(db, "userRide"),
+            where("tripId", "==", ride.id),
+            where("status", "==", "canceled")
+          );
+          const userRideSnapshot = await getDocs(userRideQuery);
+  
+          userRideSnapshot.forEach((doc) => {
+            canceledTrips.push({
+              ...doc.data(),
+              id: doc.id,
+            });
+          });
+        }
+      }
+  
+      if (userRole === "passenger") {
+        const passengerQuery = query(
+          collection(db, "userRide"),
+          where("userId", "==", currentUser.uid),
+          where("status", "==", "canceled")
+        );
+        const passengerSnapshot = await getDocs(passengerQuery);
+  
+        passengerSnapshot.forEach((doc) => {
           canceledTrips.push({
             ...doc.data(),
             id: doc.id,
@@ -279,11 +292,12 @@ function YourRides() {
         });
       }
   
-      setCanceledTrips(canceledTrips); // Update state
+      setCanceledTrips(canceledTrips);
     } catch (error) {
       console.error("Error fetching canceled trips:", error);
     }
   };
+  
   
   
 
@@ -302,7 +316,7 @@ function YourRides() {
       console.error("Error canceling trip:", error);
     }
   };
-
+  
 
   const handleRateDriver = async (tripId) => {
     try {
@@ -390,22 +404,25 @@ function YourRides() {
           <p className="placeholder">No completed trips.</p>
         )}
       </div>
-
-         {/* Canceled Trips Section */}
-      <div className="section">
-        <h2 className="section-title">Canceled Trips</h2>
-        {canceledTrips.length > 0 ? (
-          canceledTrips.map((trip) => (
-            console.log(trip),
-            <div key={trip.tripId} className="card">
-              <p><strong>Passenger id:</strong> {trip.userId || "N/A"}</p>
-              <p><strong>Status:</strong> {trip.status}</p>
-            </div>
-          ))
-        ) : (
-          <p className="placeholder">No canceled trips.</p>
+      
+{/* Canceled Trips Section */}
+<div className="section">
+  <h2 className="section-title">Canceled Trips</h2>
+  {canceledTrips.length > 0 ? (
+    canceledTrips.map((trip) => (
+      <div key={trip.id} className="card">
+        <p><strong>Trip ID:</strong> {trip.tripId}</p>
+        <p><strong>Status:</strong> {trip.status}</p>
+        {trip.driverName && (
+          <p><strong>Driver Name:</strong> {trip.driverName}</p>
         )}
       </div>
+    ))
+  ) : (
+    <p className="placeholder">No canceled trips.</p>
+  )}
+</div>
+
 
 
       {/* Trip Details Section */}
